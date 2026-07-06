@@ -4,6 +4,7 @@ import cron from 'node-cron'
 import { nanoid } from 'nanoid'
 import { appendFile, mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { PassThrough } from 'node:stream'
 import { request } from 'undici'
 import { loadConfig, saveConfig, type GatewayConfig } from './config.ts'
 import { metricsSummary, probeProvider, providerAuthKey, selectProviders, trimProviderBaseUrl } from './router.ts'
@@ -285,35 +286,50 @@ server.all('/v1/*', async (clientRequest, reply) => {
         return reply.send(responseText)
       }
 
-      recordSuccess(provider, latencyMs)
-      addRequestLog({
-        id: requestId,
-        at: new Date().toISOString(),
-        apiKeyName,
-        model,
-        path: clientRequest.url,
-        method: clientRequest.method,
-        provider: provider.name,
-        providerId: provider.id,
-        status: upstream.statusCode,
-        latencyMs,
-        retry,
-        stream,
-        billingMode: '按量',
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        costUsd: 0,
-        firstTokenMs: null,
-        userAgent,
-      })
-
       reply.code(upstream.statusCode)
       for (const [key, value] of Object.entries(upstream.headers)) {
         if (value && key.toLowerCase() !== 'transfer-encoding') {
           reply.header(key, value)
         }
       }
+      const firstTokenStarted = Date.now()
+      const proxiedBody = proxyStreamingBody(upstream.body, {
+        onComplete: (result) => {
+          const completedLatencyMs = Date.now() - started
+          recordSuccess(provider, completedLatencyMs)
+          addRequestLog({
+            id: requestId,
+            at: new Date().toISOString(),
+            apiKeyName,
+            model,
+            path: clientRequest.url,
+            method: clientRequest.method,
+            provider: provider.name,
+            providerId: provider.id,
+            status: upstream.statusCode,
+            latencyMs: completedLatencyMs,
+            retry,
+            stream,
+            billingMode: '按量',
+            promptTokens: result.usage.promptTokens,
+            completionTokens: result.usage.completionTokens,
+            totalTokens: result.usage.totalTokens,
+            costUsd: 0,
+            firstTokenMs: result.firstTokenMs,
+            userAgent,
+          })
+        },
+        onError: (error) => {
+          writeTraceEvent({
+            phase: 'stream_proxy_error',
+            requestId,
+            provider: provider.name,
+            providerId: provider.id,
+            message: describeProviderError(error),
+          })
+        },
+        startedAt: firstTokenStarted,
+      })
       writeTraceEvent({
         phase: 'gateway_response',
         requestId,
@@ -321,7 +337,7 @@ server.all('/v1/*', async (clientRequest, reply) => {
         latencyMs,
         streamed: true,
       })
-      return reply.send(upstream.body)
+      return reply.send(proxiedBody)
     } catch (error) {
       const latencyMs = Date.now() - started
       const timeoutError = error instanceof Error && error.name === 'AbortError'
