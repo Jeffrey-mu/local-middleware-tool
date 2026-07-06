@@ -456,6 +456,71 @@ function parseUsage(responseText: string) {
   }
 }
 
+function proxyStreamingBody(
+  body: AsyncIterable<Uint8Array>,
+  options: {
+    startedAt: number
+    onComplete: (result: { usage: ReturnType<typeof parseUsage>; firstTokenMs: number | null }) => void
+    onError: (error: unknown) => void
+  },
+) {
+  const output = new PassThrough()
+  const cancellableBody = body as AsyncIterable<Uint8Array> & { return?: () => Promise<unknown> }
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let completed = false
+  let firstTokenMs: number | null = null
+  let usage: ReturnType<typeof parseUsage> = { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+
+  ;(async () => {
+    try {
+      for await (const chunk of body) {
+        output.write(chunk)
+        const text = decoder.decode(chunk, { stream: true })
+        if (text) {
+          buffer += text
+          const frames = buffer.split('\n\n')
+          buffer = frames.pop() ?? ''
+          for (const frame of frames) {
+            const data = frame
+              .split('\n')
+              .filter((line) => line.startsWith('data:'))
+              .map((line) => line.replace(/^data:\s?/, ''))
+              .join('\n')
+
+            if (!data || data === '[DONE]') continue
+            try {
+              const payload = JSON.parse(data)
+              if (payload?.type === 'response.output_text.delta' && firstTokenMs == null) {
+                firstTokenMs = Date.now() - options.startedAt
+              }
+              if (payload?.type === 'response.completed' && payload.response) {
+                usage = parseUsage(JSON.stringify(payload.response))
+              }
+            } catch {
+              // Ignore non-JSON SSE frames.
+            }
+          }
+        }
+      }
+      completed = true
+      options.onComplete({ usage, firstTokenMs })
+      output.end()
+    } catch (error) {
+      options.onError(error)
+      output.destroy(error instanceof Error ? error : new Error('stream proxy failed'))
+    }
+  })()
+
+  output.on('close', () => {
+    if (!completed && typeof cancellableBody.return === 'function') {
+      cancellableBody.return().catch(() => undefined)
+    }
+  })
+
+  return output
+}
+
 async function readUpstreamError(body: { text(): Promise<string> }) {
   try {
     const text = await body.text()
