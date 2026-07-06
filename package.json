@@ -1,0 +1,40 @@
+{
+  "name": "local-middleware-tool",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:dev:gateway\" \"npm:dev:ui\"",
+    "dev:ui": "vite",
+    "dev:gateway": "tsx watch src/gateway/server.ts",
+    "gateway": "tsx src/gateway/server.ts",
+    "test:fenno": "tsx tests/fenno-smoke.ts",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "concurrently": "^10.0.3",
+    "fastify": "^5.10.0",
+    "lucide-react": "^1.23.0",
+    "nanoid": "^5.1.16",
+    "node-cron": "^4.6.0",
+    "pino": "^10.3.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "undici": "^8.7.0",
+    "ws": "^8.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "tsx": "^4.23.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  }
+}
