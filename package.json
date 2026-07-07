@@ -17,6 +17,7 @@
     "tauri:dev": "concurrently \"npm:dev:gateway\" \"tauri dev\"",
     "tauri:dev:rust": "concurrently \"npm:dev:gateway:rust\" \"tauri dev\"",
     "tauri:build": "npm run build:gateway && tauri build",
+    "tauri:build:win": "npm run build:gateway && tauri build --bundles nsis",
     "test:fenno": "tsx tests/fenno-smoke.ts",
     "test:router": "tsx tests/router-failover.ts",
     "build": "tsc -b && vite build",
