@@ -804,8 +804,18 @@
   }
 
   .provider-secret {
-    @apply grid grid-cols-[18px_1fr] items-center gap-2;
+    @apply grid grid-cols-[18px_minmax(0,1fr)_32px] items-center gap-2;
     color: var(--muted);
+  }
+
+  .secret-visibility {
+    @apply size-8 p-0;
+    color: var(--muted);
+  }
+
+  .secret-visibility:hover {
+    background: var(--soft-fill);
+    color: var(--ink);
   }
 
   .field {

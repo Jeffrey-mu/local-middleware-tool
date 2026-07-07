@@ -8,6 +8,8 @@ import {
   Clipboard,
   Database,
   DollarSign,
+  Eye,
+  EyeOff,
   Gauge,
   KeyRound,
   MessageSquareText,
@@ -1095,6 +1097,7 @@ function ProviderEditor({
 }) {
   const latencyLabel = providerStatus?.latencyMs ? formatMs(providerStatus.latencyMs) : '离线'
   const stateLabel = provider.enabled ? providerStatus?.online ? '在线' : '已启用' : '停用'
+  const [showApiKey, setShowApiKey] = useState(false)
 
   return (
     <Card className={`provider-card ${provider.enabled ? 'enabled' : ''} ${selected ? 'selected' : ''}`}>
@@ -1148,11 +1151,21 @@ function ProviderEditor({
               <KeyRound size={16} />
               <input
                 aria-label="API Key"
-                type="password"
+                type={showApiKey ? 'text' : 'password'}
                 placeholder="API Key"
                 value={provider.apiKey}
                 onChange={(event) => onChange({ apiKey: event.target.value })}
               />
+              <Button
+                className="secret-visibility"
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+                onClick={() => setShowApiKey((value) => !value)}
+                title={showApiKey ? '隐藏密钥' : '显示密钥'}
+              >
+                {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
+              </Button>
             </div>
             <div className="provider-tunables">
               <NumberField label="优先级" value={provider.priority} onChange={(value) => onChange({ priority: value })} />
