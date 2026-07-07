@@ -10,18 +10,31 @@ import {
   DollarSign,
   Gauge,
   KeyRound,
-  ListChecks,
   MessageSquareText,
+  Monitor,
+  Moon,
+  Network,
   Plus,
   RefreshCw,
+  Route,
   Save,
   Send,
   Server,
   Settings,
   ShieldCheck,
+  Sparkles,
   Square,
+  Sun,
   TerminalSquare,
+  Trash2,
+  Zap,
 } from 'lucide-react'
+import { Button } from './components/ui/button'
+import { Card } from './components/ui/card'
+import { ScrollArea } from './components/ui/scroll-area'
+import { Switch } from './components/ui/switch'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table'
+import { ToggleGroup, ToggleGroupItem } from './components/ui/toggle-group'
 import './App.css'
 
 type Provider = {
@@ -53,7 +66,7 @@ type ProviderStatus = {
 
 type GatewayConfig = {
   port: number
-  strategy: 'priority' | 'round-robin' | 'weighted' | 'fastest'
+  strategy: 'priority' | 'stable-priority' | 'round-robin' | 'weighted' | 'fastest'
   maxRetries: number
   circuitBreaker: {
     failureThreshold: number
@@ -147,7 +160,8 @@ type ChatMessage = {
   state?: 'streaming' | 'error'
 }
 
-type ViewId = 'overview' | 'providers' | 'rules' | 'pricing' | 'test' | 'logs'
+type ViewId = 'overview' | 'providers' | 'rules' | 'pricing' | 'test' | 'logs' | 'settings'
+type ThemeMode = 'system' | 'dark' | 'light'
 
 const adminBaseUrl = import.meta.env.DEV ? '' : 'http://127.0.0.1:8787'
 
@@ -167,17 +181,21 @@ const emptyProvider = (): Provider => ({
 function App() {
   const [status, setStatus] = useState<GatewayStatus | null>(null)
   const [config, setConfig] = useState<GatewayConfig | null>(null)
-  const [activeView, setActiveView] = useState<ViewId>('overview')
-  const [saving, setSaving] = useState(false)
+  const [activeView, setActiveView] = useState<ViewId>('providers')
   const [autosaving, setAutosaving] = useState(false)
   const [checking, setChecking] = useState(false)
   const [pricingSaving, setPricingSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('aigate-theme')
+    return saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system'
+  })
   const [pricing, setPricing] = useState<PricingTable>({ models: [] })
   const [chatInput, setChatInput] = useState('你好，简单介绍一下当前网关是否可用。')
   const [chatModel, setChatModel] = useState('gpt-5.4')
   const [chatStream, setChatStream] = useState(true)
   const [chatRunning, setChatRunning] = useState(false)
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -187,6 +205,18 @@ function App() {
   ])
   const configDirtyRef = useRef(false)
   const chatAbortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const applyTheme = () => {
+      document.documentElement.dataset.theme = themeMode === 'system' ? media.matches ? 'dark' : 'light' : themeMode
+      document.documentElement.style.colorScheme = document.documentElement.dataset.theme ?? 'dark'
+    }
+    localStorage.setItem('aigate-theme', themeMode)
+    applyTheme()
+    media.addEventListener('change', applyTheme)
+    return () => media.removeEventListener('change', applyTheme)
+  }, [themeMode])
 
   async function refresh(options: { forceConfig?: boolean } = {}) {
     const response = await fetch(adminUrl('/admin/status'))
@@ -199,16 +229,6 @@ function App() {
       }
       return current
     })
-  }
-
-  async function saveConfig() {
-    if (!config) return
-    setSaving(true)
-    try {
-      await persistConfig(config)
-    } finally {
-      setSaving(false)
-    }
   }
 
   async function savePricing() {
@@ -285,6 +305,23 @@ function App() {
     return new Map(status?.providers.map((provider) => [provider.providerId, provider]) ?? [])
   }, [status])
 
+  useEffect(() => {
+    if (!config?.providers.length) {
+      setSelectedProviderId(null)
+      return
+    }
+
+    const selectedExists = selectedProviderId
+      ? config.providers.some((provider) => provider.id === selectedProviderId)
+      : false
+    if (selectedExists) return
+
+    const preferredProvider = config.providers.find((provider) => provider.enabled && statusByProvider.get(provider.id)?.online)
+      ?? config.providers.find((provider) => provider.enabled)
+      ?? config.providers[0]
+    setSelectedProviderId(preferredProvider.id)
+  }, [config?.providers, selectedProviderId, statusByProvider])
+
   if (!status || !config) {
     return (
       <main className="boot">
@@ -302,13 +339,16 @@ function App() {
   const modelOptions = [...new Set(config.providers.flatMap((provider) => provider.models).filter((model) => model && model !== '*'))]
   const enabledProviders = config.providers.filter((provider) => provider.enabled).length
   const latestLog = status.logs[0]
+  const activeProvider = config.providers.find((provider) => provider.enabled && statusByProvider.get(provider.id)?.online)
+    ?? config.providers.find((provider) => provider.enabled)
+  const backupProviders = config.providers.filter((provider) => provider.enabled && provider.id !== activeProvider?.id).slice(0, 3)
   const navItems: Array<{ id: ViewId; label: string; icon: React.ReactNode; meta: string }> = [
-    { id: 'overview', label: '概览', icon: <Gauge size={17} />, meta: `${formatToken(analytics.totalRequests)} 次` },
-    { id: 'providers', label: '服务商', icon: <Server size={17} />, meta: `${enabledProviders}/${config.providers.length}` },
-    { id: 'rules', label: '路由', icon: <ListChecks size={17} />, meta: config.strategy },
-    { id: 'pricing', label: '定价', icon: <DollarSign size={17} />, meta: `${pricing.models.length}` },
-    { id: 'test', label: '测试', icon: <MessageSquareText size={17} />, meta: chatStream ? '流式' : '非流式' },
-    { id: 'logs', label: '日志', icon: <TerminalSquare size={17} />, meta: `${status.logs.length}` },
+    { id: 'overview', label: '控制', icon: <Gauge size={16} />, meta: `${formatToken(analytics.totalRequests)}` },
+    { id: 'providers', label: '供应', icon: <Server size={16} />, meta: `${enabledProviders}/${config.providers.length}` },
+    { id: 'rules', label: '路由', icon: <Route size={16} />, meta: config.strategy },
+    { id: 'pricing', label: '价格', icon: <DollarSign size={16} />, meta: `${pricing.models.length}` },
+    { id: 'test', label: '测试', icon: <MessageSquareText size={16} />, meta: chatStream ? 'SSE' : 'JSON' },
+    { id: 'logs', label: '日志', icon: <TerminalSquare size={16} />, meta: `${status.logs.length}` },
   ]
 
   return (
@@ -318,10 +358,7 @@ function App() {
           <div className="brand-mark">
             <ShieldCheck size={22} />
           </div>
-          <div>
-            <p>Local Gateway</p>
-            <h1>AIGate</h1>
-          </div>
+          <strong>AIGate</strong>
         </div>
 
         <div className="runtime-card">
@@ -339,7 +376,7 @@ function App() {
               window.setTimeout(() => setCopied(false), 1400)
             }}
           >
-            <span>{endpoint}</span>
+            <span>{endpoint.replace(/^https?:\/\//, '')}</span>
             {copied ? <Check size={16} /> : <Clipboard size={16} />}
           </button>
         </div>
@@ -360,44 +397,33 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <span>自动保存</span>
-          <strong>{autosaving || saving ? '保存中' : configDirtyRef.current ? '待保存' : '已同步'}</strong>
+          <button className="rail-settings" title="设置" type="button" onClick={() => setActiveView('settings')}>
+            <Settings size={18} />
+          </button>
+          <span className="sync-label">{autosaving ? '保存中' : configDirtyRef.current ? '待保存' : '已同步'}</span>
         </div>
       </aside>
 
       <section className="workspace" id="main-content">
         <header className="workspace-header">
           <div>
-            <p className="eyebrow">本地 OpenAI 兼容中间层</p>
+            <p className="eyebrow">Local OpenAI Compatible Gateway</p>
             <h2>{viewTitle(activeView)}</h2>
-          </div>
-          <div className="toolbar">
-            <button className="secondary-action" type="button" onClick={() => refresh({ forceConfig: true })}>
-              <RefreshCw size={16} />
-              刷新
-            </button>
-            <button type="button" onClick={saveConfig} disabled={saving || autosaving}>
-              <Save size={16} />
-              {saving || autosaving ? '保存中' : '保存配置'}
-            </button>
           </div>
         </header>
 
         {activeView === 'overview' && (
           <section className="view-stack">
-            <div className="hero-panel">
-              <div>
-                <p className="eyebrow">实时状态</p>
-                <h3>{enabledProviders ? '网关已准备好接管本地 AI 流量' : '还没有启用可用服务商'}</h3>
-                <p>
-                  当前策略为 {strategyLabel(config.strategy)}，在线服务商 {status.metrics.onlineProviders} 个。
-                  {latestLog ? ` 最近一次请求走 ${latestLog.provider}，耗时 ${formatMs(latestLog.latencyMs)}。` : ' 等待第一条请求进入。'}
-                </p>
+            <div className="control-hero">
+              <div className="control-copy">
+                <span className="status-pill"><span className="live-dot" /> Middleware Running</span>
+                <h3>{enabledProviders ? '本地 AI 流量正在被接管' : '启用一个 Provider 后开始接管流量'}</h3>
+                <p>{endpoint} · {strategyLabel(config.strategy)} · {status.metrics.onlineProviders} 个在线 Provider</p>
               </div>
-              <button type="button" onClick={() => setActiveView('test')}>
-                打开测试窗口
+              <Button type="button" onClick={() => setActiveView('test')}>
+                测试请求
                 <ChevronRight size={16} />
-              </button>
+              </Button>
             </div>
 
             <section className="metrics-grid">
@@ -407,6 +433,17 @@ function App() {
               <Metric icon={<Clock />} label="平均响应" value={formatMs(analytics.avgLatencyMs)} />
               <Metric icon={<DollarSign />} label="费用估算" value={formatUsd(analytics.totalCost)} />
               <Metric icon={<Server />} label="在线" value={`${status.metrics.onlineProviders}/${config.providers.length}`} />
+            </section>
+
+            <section className="command-grid">
+              <RouteFlow
+                activeProvider={activeProvider}
+                backups={backupProviders}
+                latestLog={latestLog}
+                statusByProvider={statusByProvider}
+                strategy={config.strategy}
+              />
+              <EventTimeline logs={status.logs} />
             </section>
 
             <section className="dashboard-grid">
@@ -455,56 +492,37 @@ function App() {
         )}
 
         {activeView === 'providers' && (
-          <section className="panel">
+          <section className="panel provider-panel">
             <div className="panel-title">
               <div>
                 <p className="eyebrow">服务商</p>
                 <h3>路由池</h3>
               </div>
               <div className="actions">
-                <button className="secondary-action" type="button" onClick={healthCheck} disabled={checking}>
+                <Button variant="secondary" type="button" onClick={healthCheck} disabled={checking}>
                   <RefreshCw size={16} />
                   {checking ? '检测中' : '检测'}
-                </button>
-                <button type="button" onClick={() => updateConfig({ ...config, providers: [...config.providers, emptyProvider()] })}>
+                </Button>
+                <Button type="button" onClick={addProvider}>
                   <Plus size={16} />
                   添加
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="provider-list">
+            <div className="provider-card-grid">
               {config.providers.map((provider, index) => {
                 const providerStatus = statusByProvider.get(provider.id)
                 return (
-                  <article className="provider-row" key={provider.id}>
-                    <button
-                      className={`toggle ${provider.enabled ? 'on' : ''}`}
-                      title="启用服务商"
-                      type="button"
-                      onClick={() => updateProvider(index, { enabled: !provider.enabled })}
-                    />
-                    <div className="provider-main">
-                      <input value={provider.name} onChange={(event) => updateProvider(index, { name: event.target.value })} />
-                      <input value={provider.baseUrl} onChange={(event) => updateProvider(index, { baseUrl: event.target.value })} />
-                    </div>
-                    <div className="provider-secret">
-                      <KeyRound size={16} />
-                      <input
-                        type="password"
-                        placeholder="API Key"
-                        value={provider.apiKey}
-                        onChange={(event) => updateProvider(index, { apiKey: event.target.value })}
-                      />
-                    </div>
-                    <NumberField label="优先级" value={provider.priority} onChange={(value) => updateProvider(index, { priority: value })} />
-                    <NumberField label="权重" value={provider.weight} onChange={(value) => updateProvider(index, { weight: value })} />
-                    <div className="health">
-                      <span className={providerStatus?.online ? 'dot online' : 'dot'} />
-                      <strong>{providerStatus?.latencyMs ? `${providerStatus.latencyMs}ms` : '离线'}</strong>
-                      <small>{providerStatus?.requests ?? 0} 次请求</small>
-                    </div>
-                  </article>
+                  <ProviderEditor
+                    key={provider.id}
+                    provider={provider}
+                    providerStatus={providerStatus}
+                    selected={selectedProviderId === provider.id}
+                    onSelect={() => setSelectedProviderId(provider.id)}
+                    onDelete={() => removeProvider(index)}
+                    onChange={(patch) => updateProvider(index, patch)}
+                  />
                 )
               })}
             </div>
@@ -519,6 +537,7 @@ function App() {
                 路由策略
                 <select value={config.strategy} onChange={(event) => updateConfig({ ...config, strategy: event.target.value as GatewayConfig['strategy'] })}>
                   <option value="priority">优先级</option>
+                  <option value="stable-priority">稳定优先</option>
                   <option value="fastest">最快优先</option>
                   <option value="round-robin">轮询</option>
                   <option value="weighted">权重</option>
@@ -567,9 +586,9 @@ function App() {
                     <option key={model} value={model} />
                   ))}
                 </datalist>
-                <button className={`segmented-toggle ${chatStream ? 'active' : ''}`} type="button" onClick={() => setChatStream((value) => !value)}>
+                <Button variant={chatStream ? 'default' : 'secondary'} type="button" onClick={() => setChatStream((value) => !value)}>
                   {chatStream ? '流式' : '非流式'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -594,15 +613,15 @@ function App() {
                 }}
               />
               {chatRunning ? (
-                <button type="button" onClick={stopChat}>
+                <Button type="button" onClick={stopChat}>
                   <Square size={16} />
                   停止
-                </button>
+                </Button>
               ) : (
-                <button type="submit" disabled={!chatInput.trim() || !chatModel.trim()}>
+                <Button type="submit" disabled={!chatInput.trim() || !chatModel.trim()}>
                   <Send size={16} />
                   发送
-                </button>
+                </Button>
               )}
             </form>
           </section>
@@ -616,14 +635,14 @@ function App() {
                 <h3>模型定价</h3>
               </div>
               <div className="actions">
-                <button className="secondary-action" type="button" onClick={addPricingRow}>
+                <Button variant="secondary" type="button" onClick={addPricingRow}>
                   <Plus size={16} />
                   添加模型
-                </button>
-                <button type="button" onClick={savePricing} disabled={pricingSaving}>
+                </Button>
+                <Button type="button" onClick={savePricing} disabled={pricingSaving}>
                   <Save size={16} />
                   {pricingSaving ? '保存中' : '保存定价'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -674,9 +693,9 @@ function App() {
                   />
                   <div className="pricing-meta">
                     <time>{item.updatedAt ? formatTime(item.updatedAt) : '未保存'}</time>
-                    <button className="text-action" type="button" onClick={() => removePricingRow(index)}>
+                    <Button className="text-action" variant="ghost" type="button" onClick={() => removePricingRow(index)}>
                       删除
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -696,6 +715,14 @@ function App() {
             <UsageTable logs={status.logs} />
           </section>
         )}
+
+        {activeView === 'settings' && (
+          <SettingsView
+            themeMode={themeMode}
+            onBack={() => setActiveView('providers')}
+            onThemeModeChange={setThemeMode}
+          />
+        )}
       </section>
     </main>
   )
@@ -714,6 +741,33 @@ function App() {
   function updateConfig(nextConfig: GatewayConfig) {
     configDirtyRef.current = true
     setConfig(nextConfig)
+  }
+
+  function addProvider() {
+    if (!config) return
+    if (!window.confirm('确认添加一个新的服务商？')) return
+    const provider = emptyProvider()
+    setSelectedProviderId(provider.id)
+    updateConfig({ ...config, providers: [...config.providers, provider] })
+  }
+
+  function removeProvider(index: number) {
+    if (!config) return
+    const provider = config.providers[index]
+    if (!provider) return
+    if (!window.confirm(`确认删除服务商「${provider.name || '未命名 Provider'}」？相关路由规则绑定也会一并移除。`)) return
+
+    const nextProviders = config.providers.filter((_, providerIndex) => providerIndex !== index)
+    const nextSelectedProvider = nextProviders[Math.min(index, nextProviders.length - 1)] ?? null
+    setSelectedProviderId(nextSelectedProvider?.id ?? null)
+    updateConfig({
+      ...config,
+      providers: nextProviders,
+      rules: config.rules.map((rule) => ({
+        ...rule,
+        providerIds: rule.providerIds.filter((providerId) => providerId !== provider.id),
+      })),
+    })
   }
 
   function addPricingRow() {
@@ -841,6 +895,237 @@ function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; 
   )
 }
 
+function SettingsView({
+  themeMode,
+  onBack,
+  onThemeModeChange,
+}: {
+  themeMode: ThemeMode
+  onBack: () => void
+  onThemeModeChange: (themeMode: ThemeMode) => void
+}) {
+  return (
+    <section className="settings-page">
+      <div className="settings-page-head">
+        <button className="settings-back" type="button" onClick={onBack} title="返回">
+          <ChevronRight size={18} />
+        </button>
+        <h3>设置</h3>
+      </div>
+
+      <div className="settings-tabs" role="tablist" aria-label="设置分类">
+        <button className="active" type="button">通用</button>
+        <button type="button">路由</button>
+        <button type="button">认证</button>
+        <button type="button">高级</button>
+        <button type="button">使用统计</button>
+        <button type="button">关于</button>
+      </div>
+
+      <div className="settings-sections">
+        <section className="settings-section">
+          <div className="settings-section-copy">
+            <strong>外观主题</strong>
+            <span>选择 AIGate 在桌面环境中的显示方式。</span>
+          </div>
+          <ToggleGroup
+            className="theme-toggle"
+            size="sm"
+            spacing={1}
+            type="single"
+            value={themeMode}
+            onValueChange={(value) => {
+              if (value === 'system' || value === 'dark' || value === 'light') onThemeModeChange(value)
+            }}
+          >
+            <ToggleGroupItem value="light">
+              <Sun size={15} />
+              浅色
+            </ToggleGroupItem>
+            <ToggleGroupItem value="dark">
+              <Moon size={15} />
+              深色
+            </ToggleGroupItem>
+            <ToggleGroupItem value="system">
+              <Monitor size={15} />
+              跟随系统
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </section>
+
+        <section className="settings-section">
+          <div className="settings-section-copy">
+            <strong>滚动条</strong>
+            <span>侧栏固定，日志和表格只在内容区内部滚动。</span>
+          </div>
+          <span className="setting-state">已优化</span>
+        </section>
+      </div>
+    </section>
+  )
+}
+
+function RouteFlow({
+  activeProvider,
+  backups,
+  latestLog,
+  statusByProvider,
+  strategy,
+}: {
+  activeProvider?: Provider
+  backups: Provider[]
+  latestLog?: GatewayStatus['logs'][number]
+  statusByProvider: Map<string, ProviderStatus>
+  strategy: GatewayConfig['strategy']
+}) {
+  const activeStatus = activeProvider ? statusByProvider.get(activeProvider.id) : undefined
+  return (
+    <section className="panel route-flow-panel">
+      <PanelTitle eyebrow="Route Flow" title="当前请求路径" icon={<Network size={18} />} />
+      <div className="route-flow">
+        <div className="route-node source">
+          <Sparkles size={18} />
+          <span>Codex / Cursor</span>
+          <strong>OpenAI SDK</strong>
+        </div>
+        <div className="route-line"><i /></div>
+        <div className="route-node router">
+          <Zap size={18} />
+          <span>{strategyLabel(strategy)}</span>
+          <strong>AIGate Router</strong>
+        </div>
+        <div className="route-line"><i /></div>
+        <div className="route-node provider">
+          <Server size={18} />
+          <span>{activeStatus?.online ? 'Primary online' : 'Waiting route'}</span>
+          <strong>{activeProvider?.name ?? '未启用 Provider'}</strong>
+          <small>{activeStatus?.latencyMs ? formatMs(activeStatus.latencyMs) : latestLog ? formatMs(latestLog.latencyMs) : 'no traffic'}</small>
+        </div>
+      </div>
+      <div className="backup-strip">
+        {backups.map((provider) => {
+          const providerStatus = statusByProvider.get(provider.id)
+          return (
+            <span key={provider.id}>
+              <span className={providerStatus?.online ? 'dot online' : 'dot'} />
+              {provider.name}
+            </span>
+          )
+        })}
+        {!backups.length && <span>暂无备用 Provider</span>}
+      </div>
+    </section>
+  )
+}
+
+function EventTimeline({ logs }: { logs: GatewayStatus['logs'] }) {
+  return (
+    <section className="panel event-panel">
+      <PanelTitle eyebrow="Timeline" title="最近事件" icon={<Clock size={18} />} />
+      <div className="event-timeline">
+        {logs.slice(0, 6).map((log) => (
+          <article className="event-item" key={`${log.id}-${log.retry}-${log.provider}`}>
+            <time>{formatTime(log.at)}</time>
+            <div>
+              <strong>{log.retry > 0 ? 'Auto switch' : statusOk(log.status) ? 'Request success' : 'Route warning'}</strong>
+              <span>{log.provider} · {log.model} · {formatMs(log.latencyMs)}</span>
+            </div>
+            <em className={statusOk(log.status) ? 'ok' : 'warn'}>{String(log.status)}</em>
+          </article>
+        ))}
+        {!logs.length && <p className="empty">等待第一条请求进入路由器。</p>}
+      </div>
+    </section>
+  )
+}
+
+function ProviderEditor({
+  provider,
+  providerStatus,
+  selected,
+  onSelect,
+  onDelete,
+  onChange,
+}: {
+  provider: Provider
+  providerStatus?: ProviderStatus
+  selected: boolean
+  onSelect: () => void
+  onDelete: () => void
+  onChange: (patch: Partial<Provider>) => void
+}) {
+  const latencyLabel = providerStatus?.latencyMs ? formatMs(providerStatus.latencyMs) : '离线'
+  const stateLabel = provider.enabled ? providerStatus?.online ? '在线' : '已启用' : '停用'
+
+  return (
+    <Card className={`provider-card ${provider.enabled ? 'enabled' : ''} ${selected ? 'selected' : ''}`}>
+      <button className="provider-card-summary" type="button" onClick={onSelect} aria-expanded={selected}>
+        <span className="provider-grip" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="provider-avatar">{provider.name.trim().slice(0, 2).toUpperCase() || 'AI'}</span>
+        <span className="provider-identity">
+          <strong>{provider.name || '未命名 Provider'}</strong>
+          <small>{provider.baseUrl || '未配置 Base URL'}</small>
+        </span>
+        <span className="provider-row-meta">
+          <span><b>{latencyLabel}</b> Latency</span>
+          <span><b>{providerStatus?.requests ?? 0}</b> Requests</span>
+          <span><b>{providerStatus?.failures ?? 0}</b> Failures</span>
+        </span>
+        <span className={`provider-state ${providerStatus?.online ? 'online' : ''}`}>
+          {selected && <Check size={13} />}
+          {stateLabel}
+        </span>
+      </button>
+
+      {selected && (
+        <div className="provider-expanded">
+          <div className="provider-card-head">
+            <div>
+              <span className={providerStatus?.online ? 'dot online' : 'dot'} />
+              <strong>服务商配置</strong>
+            </div>
+            <div className="provider-actions">
+              <Switch checked={provider.enabled} title="启用服务商" onCheckedChange={(checked) => onChange({ enabled: checked })} />
+              <Button className="provider-delete" variant="ghost" type="button" onClick={onDelete} title="删除服务商">
+                <Trash2 size={15} />
+                删除
+              </Button>
+            </div>
+          </div>
+          <div className="provider-fields">
+            <label className="field">
+              名称
+              <input value={provider.name} onChange={(event) => onChange({ name: event.target.value })} />
+            </label>
+            <label className="field">
+              Base URL
+              <input value={provider.baseUrl} onChange={(event) => onChange({ baseUrl: event.target.value })} />
+            </label>
+            <div className="provider-secret">
+              <KeyRound size={16} />
+              <input
+                aria-label="API Key"
+                type="password"
+                placeholder="API Key"
+                value={provider.apiKey}
+                onChange={(event) => onChange({ apiKey: event.target.value })}
+              />
+            </div>
+            <div className="provider-tunables">
+              <NumberField label="优先级" value={provider.priority} onChange={(value) => onChange({ priority: value })} />
+              <NumberField label="权重" value={provider.weight} onChange={(value) => onChange({ weight: value })} />
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
     <label className="field">
@@ -852,40 +1137,46 @@ function NumberField({ label, value, onChange }: { label: string; value: number;
 
 function UsageTable({ logs }: { logs: GatewayStatus['logs'] }) {
   return (
-    <div className="usage-table">
-      <div className="usage-head">
-        <span>API 密钥</span>
-        <span>模型</span>
-        <span>中转站</span>
-        <span>端点</span>
-        <span>类型</span>
-        <span>Token</span>
-        <span>费用</span>
-        <span>耗时</span>
-        <span>时间</span>
-        <span>User-Agent</span>
-      </div>
-      {logs.slice(0, 80).map((log) => (
-        <div className="usage-row" key={`${log.id}-${log.retry}-${log.provider}`}>
-          <span>{log.apiKeyName}</span>
-          <strong>{log.model}</strong>
-          <span>{log.provider}</span>
-          <span>{log.path.replace('/v1', '')}</span>
-          <span><em>{log.stream ? '流式' : '非流式'}</em></span>
-          <span className="numeric token-cell">
-            <b>↓ {log.promptTokens.toLocaleString()}</b>
-            <b>↑ {log.completionTokens.toLocaleString()}</b>
-            {Boolean(log.cachedTokens) && <small>R {formatToken(log.cachedTokens ?? 0)}</small>}
-            <small>Σ {formatToken(log.totalTokens)}</small>
-          </span>
-          <span className="numeric cost">{formatUsd(log.costUsd)}</span>
-          <span className="numeric">{formatMs(log.latencyMs)}</span>
-          <time>{formatTime(log.at)}</time>
-          <span className="user-agent">{log.userAgent || '未知'}</span>
-        </div>
-      ))}
+    <ScrollArea className="usage-table">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>API 密钥</TableHead>
+            <TableHead>模型</TableHead>
+            <TableHead>中转站</TableHead>
+            <TableHead>端点</TableHead>
+            <TableHead>类型</TableHead>
+            <TableHead className="numeric">Token</TableHead>
+            <TableHead className="numeric">费用</TableHead>
+            <TableHead className="numeric">耗时</TableHead>
+            <TableHead>时间</TableHead>
+            <TableHead>User-Agent</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {logs.slice(0, 80).map((log) => (
+            <TableRow key={`${log.id}-${log.retry}-${log.provider}`}>
+              <TableCell>{log.apiKeyName}</TableCell>
+              <TableCell><strong>{log.model}</strong></TableCell>
+              <TableCell>{log.provider}</TableCell>
+              <TableCell>{log.path.replace('/v1', '')}</TableCell>
+              <TableCell><em>{log.stream ? '流式' : '非流式'}</em></TableCell>
+              <TableCell className="numeric token-cell">
+                <b>↓ {log.promptTokens.toLocaleString()}</b>
+                <b>↑ {log.completionTokens.toLocaleString()}</b>
+                {Boolean(log.cachedTokens) && <small>R {formatToken(log.cachedTokens ?? 0)}</small>}
+                <small>Σ {formatToken(log.totalTokens)}</small>
+              </TableCell>
+              <TableCell className="numeric cost">{formatUsd(log.costUsd)}</TableCell>
+              <TableCell className="numeric">{formatMs(log.latencyMs)}</TableCell>
+              <TableCell><time>{formatTime(log.at)}</time></TableCell>
+              <TableCell><span className="user-agent">{log.userAgent || '未知'}</span></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       {!logs.length && <p className="empty">暂无请求记录。</p>}
-    </div>
+    </ScrollArea>
   )
 }
 
@@ -897,6 +1188,7 @@ function viewTitle(view: ViewId) {
     pricing: '模型定价',
     test: '请求测试',
     logs: '请求日志',
+    settings: '设置',
   }
   return titles[view]
 }
@@ -904,6 +1196,7 @@ function viewTitle(view: ViewId) {
 function strategyLabel(strategy: GatewayConfig['strategy']) {
   const labels: Record<GatewayConfig['strategy'], string> = {
     priority: '优先级',
+    'stable-priority': '稳定优先',
     fastest: '最快优先',
     'round-robin': '轮询',
     weighted: '权重',
@@ -940,6 +1233,11 @@ function formatTime(value: string) {
 function barWidth(value: number, total: number) {
   if (!total) return 0
   return Math.max(6, Math.round((value / total) * 100))
+}
+
+function statusOk(status: number | string) {
+  if (typeof status === 'number') return status >= 200 && status < 400
+  return status.startsWith('2') || status === 'ok'
 }
 
 function adminUrl(path: string) {
