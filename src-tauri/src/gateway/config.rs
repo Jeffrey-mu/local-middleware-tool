@@ -49,6 +49,7 @@ pub struct CircuitBreakerConfig {
 #[serde(rename_all = "kebab-case")]
 pub enum Strategy {
     Priority,
+    StablePriority,
     RoundRobin,
     Weighted,
     Fastest,

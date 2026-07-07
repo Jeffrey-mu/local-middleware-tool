@@ -406,6 +406,25 @@ fn proxy_streaming_body(
         }
 
         let latency_ms = context.started.elapsed().as_millis() as u64;
+        let usage = parser.usage();
+        if !parser.completed() || usage.total_tokens == 0 {
+            record_stream_semantic_failure(
+                &context.state,
+                &context.provider,
+                context.status_code,
+                latency_ms,
+                context.retry,
+                &context.api_key_name,
+                &context.model,
+                &context.path,
+                &context.method,
+                &context.user_agent,
+                "Stream finished without a valid response.completed usage payload.",
+            )
+            .await;
+            return;
+        }
+
         record_success_attempt(
             &context.state,
             &context.provider,
@@ -416,13 +435,56 @@ fn proxy_streaming_body(
             &context.model,
             &context.path,
             &context.method,
-            parser.usage(),
+            usage,
             true,
             &context.user_agent,
             parser.first_token_ms(),
         )
         .await;
     }
+}
+
+async fn record_stream_semantic_failure(
+    state: &AppState,
+    provider: &ProviderConfig,
+    status_code: u16,
+    latency_ms: u64,
+    retry: usize,
+    api_key_name: &str,
+    model: &str,
+    path: &str,
+    method: &Method,
+    user_agent: &str,
+    message: &str,
+) {
+    let mut inner = state.inner.lock().await;
+    let cooldown_ms = inner.config.circuit_breaker.cooldown_ms;
+    inner.gateway_state.record_failure(
+        provider,
+        latency_ms,
+        Some(status_code),
+        false,
+        1,
+        cooldown_ms,
+        true,
+    );
+    let log = request_log(
+        provider,
+        json!("invalid_stream"),
+        latency_ms,
+        retry,
+        api_key_name,
+        model,
+        path,
+        method,
+        true,
+        TokenUsage::default(),
+        0.0,
+        None,
+        user_agent,
+        Some(message.into()),
+    );
+    inner.gateway_state.add_request_log(log).await;
 }
 
 async fn record_failed_attempt(
@@ -441,12 +503,17 @@ async fn record_failed_attempt(
 ) {
     let mut inner = state.inner.lock().await;
     let breaker = inner.config.circuit_breaker.clone();
+    let failure_threshold = if should_failover_status(status_code) {
+        1
+    } else {
+        breaker.failure_threshold
+    };
     inner.gateway_state.record_failure(
         provider,
         latency_ms,
         Some(status_code),
         false,
-        breaker.failure_threshold,
+        failure_threshold,
         breaker.cooldown_ms,
         true,
     );
@@ -688,7 +755,10 @@ fn forward_headers(headers: &HeaderMap, provider: &ProviderConfig) -> HeaderMap 
     let mut next = HeaderMap::new();
     for (key, value) in headers.iter() {
         let name = key.as_str().to_ascii_lowercase();
-        if matches!(name.as_str(), "host" | "content-length" | "connection") {
+        if matches!(
+            name.as_str(),
+            "host" | "content-length" | "connection" | "accept-encoding"
+        ) {
             continue;
         }
         next.insert(key, value.clone());
@@ -703,9 +773,13 @@ fn forward_headers(headers: &HeaderMap, provider: &ProviderConfig) -> HeaderMap 
 
 fn copy_response_headers(target: &mut HeaderMap, source: &HeaderMap) {
     for (key, value) in source.iter() {
-        if key != axum::http::header::TRANSFER_ENCODING {
-            target.insert(key, value.clone());
+        if matches!(
+            key.as_str(),
+            "transfer-encoding" | "content-length" | "content-encoding" | "connection"
+        ) {
+            continue;
         }
+        target.insert(key, value.clone());
     }
 }
 
@@ -873,6 +947,76 @@ async fn read_trace_events() -> Vec<Value> {
         .collect()
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::header;
+
+    fn test_provider() -> ProviderConfig {
+        ProviderConfig {
+            id: "test".into(),
+            name: "Test".into(),
+            base_url: "https://example.test/v1".into(),
+            api_key: "provider-key".into(),
+            api_keys: vec![],
+            priority: 1,
+            weight: 100,
+            timeout_ms: 30_000,
+            enabled: true,
+            models: vec!["*".into()],
+        }
+    }
+
+    #[test]
+    fn forward_headers_does_not_forward_client_compression_request() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::ACCEPT_ENCODING,
+            HeaderValue::from_static("gzip, br"),
+        );
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer client-key"),
+        );
+
+        let forwarded = forward_headers(&headers, &test_provider());
+
+        assert!(!forwarded.contains_key(header::ACCEPT_ENCODING));
+        assert_eq!(
+            forwarded.get(header::AUTHORIZATION),
+            Some(&HeaderValue::from_static("Bearer provider-key"))
+        );
+    }
+
+    #[test]
+    fn copy_response_headers_strips_transport_and_body_framing_headers() {
+        let mut source = HeaderMap::new();
+        source.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("text/event-stream"),
+        );
+        source.insert(header::CONTENT_ENCODING, HeaderValue::from_static("gzip"));
+        source.insert(header::CONTENT_LENGTH, HeaderValue::from_static("100"));
+        source.insert(
+            header::TRANSFER_ENCODING,
+            HeaderValue::from_static("chunked"),
+        );
+        source.insert(header::CONNECTION, HeaderValue::from_static("keep-alive"));
+
+        let mut copied = HeaderMap::new();
+        copy_response_headers(&mut copied, &source);
+
+        assert_eq!(
+            copied.get(header::CONTENT_TYPE),
+            Some(&HeaderValue::from_static("text/event-stream"))
+        );
+        assert!(!copied.contains_key(header::CONTENT_ENCODING));
+        assert!(!copied.contains_key(header::CONTENT_LENGTH));
+        assert!(!copied.contains_key(header::TRANSFER_ENCODING));
+        assert!(!copied.contains_key(header::CONNECTION));
+    }
+}
+
 mod stream {
     use super::{parse_usage, Instant, TokenUsage};
     use axum::body::Bytes;
@@ -882,6 +1026,7 @@ mod stream {
         buffer: String,
         usage: TokenUsage,
         first_token_ms: Option<u64>,
+        completed: bool,
     }
 
     impl SseUsageParser {
@@ -905,6 +1050,10 @@ mod stream {
 
         pub fn first_token_ms(&self) -> Option<u64> {
             self.first_token_ms
+        }
+
+        pub fn completed(&self) -> bool {
+            self.completed
         }
 
         fn parse_frame(&mut self, frame: &str, first_token_started: Instant) {
@@ -936,6 +1085,7 @@ mod stream {
                 .and_then(serde_json::Value::as_str)
                 .is_some_and(|event_type| event_type == "response.completed")
             {
+                self.completed = true;
                 if let Some(response) = payload.get("response") {
                     self.usage = parse_usage(response);
                 }
@@ -973,6 +1123,26 @@ data: [DONE]
             assert_eq!(usage.completion_tokens, 7);
             assert_eq!(usage.total_tokens, 19);
             assert!(parser.first_token_ms().is_some());
+            assert!(parser.completed());
+        }
+
+        #[test]
+        fn does_not_mark_done_without_response_completed_frame() {
+            let mut parser = SseUsageParser::default();
+
+            parser.push_chunk(
+                &Bytes::from_static(
+                    br#"data: {"type":"response.output_text.delta","delta":"hi"}
+
+data: [DONE]
+
+"#,
+                ),
+                Instant::now(),
+            );
+
+            assert!(!parser.completed());
+            assert_eq!(parser.usage().total_tokens, 0);
         }
     }
 }
