@@ -39,7 +39,15 @@ pub async fn load_pricing_table() -> Result<PricingTable> {
 
     match tokio::fs::read_to_string(&path).await {
         Ok(raw) => Ok(serde_json::from_str(&raw)?),
-        Err(_) => save_pricing_table(PricingTable::default()).await,
+        Err(_) => {
+            if let Some(seed_path) = seed_pricing_path() {
+                if let Ok(raw) = tokio::fs::read_to_string(seed_path).await {
+                    let table = serde_json::from_str::<PricingTable>(&raw)?;
+                    return save_pricing_table(table).await;
+                }
+            }
+            save_pricing_table(PricingTable::default()).await
+        }
     }
 }
 
@@ -100,6 +108,25 @@ pub fn parse_usage(payload: &serde_json::Value) -> TokenUsage {
 
 fn pricing_path() -> PathBuf {
     data_dir().join("model-pricing.json")
+}
+
+fn seed_pricing_path() -> Option<PathBuf> {
+    let mut candidates = Vec::new();
+
+    if let Ok(path) = std::env::var("CCSWITCH_PRICING_SEED") {
+        candidates.push(PathBuf::from(path));
+    }
+
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(contents_dir) = exe.parent().and_then(|path| path.parent()) {
+            candidates.push(contents_dir.join("Resources/model-pricing.json"));
+            candidates.push(contents_dir.join("Resources/_up_/data/model-pricing.json"));
+        }
+    }
+
+    candidates.push(std::env::current_dir().ok()?.join("data/model-pricing.json"));
+
+    candidates.into_iter().find(|candidate| candidate.is_file())
 }
 
 fn per_token(usd_per_million: f64) -> f64 {

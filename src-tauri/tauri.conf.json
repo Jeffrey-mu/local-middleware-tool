@@ -36,6 +36,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": [
+      "../data/model-pricing.json"
+    ],
     "externalBin": [
       "binaries/ccswitch-gateway"
     ],
