@@ -124,7 +124,9 @@ fn seed_pricing_path() -> Option<PathBuf> {
         }
     }
 
-    candidates.push(std::env::current_dir().ok()?.join("data/model-pricing.json"));
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd.join("data/model-pricing.json"));
+    }
 
     candidates.into_iter().find(|candidate| candidate.is_file())
 }
