@@ -384,10 +384,20 @@
   .usage-panel,
   .settings-grid,
   .workspace > .panel {
-    @apply m-4 h-[calc(100vh-96px)] overflow-hidden;
+    @apply m-4 h-[calc(100vh-96px)] min-h-0;
   }
 
+  .chat-panel {
+    @apply overflow-hidden;
+  }
+
+  .pricing-panel,
+  .usage-panel,
   .settings-grid {
+    @apply overflow-y-auto;
+  }
+
+  .workspace > .panel {
     @apply overflow-y-auto;
   }
 
