@@ -7,6 +7,7 @@ import path from 'node:path'
 import { PassThrough } from 'node:stream'
 import { request } from 'undici'
 import { loadConfig, saveConfig, type GatewayConfig } from './config.ts'
+import { estimateCostUsd, loadPricingTable, savePricingTable, type PricingTable } from './pricing.ts'
 import { metricsSummary, probeProvider, providerAuthKey, selectProviders, trimProviderBaseUrl } from './router.ts'
 import {
   addRequestLog,
@@ -16,10 +17,13 @@ import {
   loadRequestLogs,
   recordFailure,
   recordSuccess,
+  updateRequestLogs,
 } from './state.ts'
 
 let config: GatewayConfig = await loadConfig()
+let pricingTable: PricingTable = await loadPricingTable()
 await loadRequestLogs()
+recalculateLoggedCosts()
 const tracePath = path.join(process.cwd(), 'data', 'gateway-trace.jsonl')
 
 for (const provider of config.providers) {
@@ -69,6 +73,7 @@ server.setErrorHandler((error, request, reply) => {
 server.get('/admin/status', async () => ({
   endpoint: `http://127.0.0.1:${config.port}/v1`,
   config,
+  pricing: pricingTable,
   metrics: metricsSummary(),
   providers: getProviderStatuses(),
   logs: getRequestLogs(),
@@ -87,6 +92,14 @@ server.put('/admin/config', async (request) => {
   return { ok: true, config }
 })
 
+server.get('/admin/pricing', async () => pricingTable)
+
+server.put('/admin/pricing', async (request) => {
+  pricingTable = await savePricingTable(request.body as PricingTable)
+  recalculateLoggedCosts()
+  return pricingTable
+})
+
 server.post('/admin/health-check', async () => {
   await runHealthCheck()
   return {
@@ -103,7 +116,7 @@ server.all('/v1/*', async (clientRequest, reply) => {
   const stream = isStreamingRequest(clientRequest.body)
   const userAgent = getHeader(clientRequest.headers, 'user-agent')
   const apiKeyName = formatApiKeyName(getHeader(clientRequest.headers, 'authorization'))
-  const providers = selectProviders(config, model).slice(0, config.maxRetries + 1)
+  const providers = selectProviders(config, model)
 
   writeTraceEvent({
     phase: 'incoming',
@@ -152,7 +165,7 @@ server.all('/v1/*', async (clientRequest, reply) => {
         signal: controller.signal,
       })
       const latencyMs = Date.now() - started
-      const shouldFailover = upstream.statusCode === 429 || upstream.statusCode >= 500
+      const shouldFailover = shouldFailoverStatus(upstream.statusCode)
       writeTraceEvent({
         phase: 'upstream_headers',
         requestId,
@@ -190,7 +203,7 @@ server.all('/v1/*', async (clientRequest, reply) => {
           promptTokens: 0,
           completionTokens: 0,
           totalTokens: 0,
-          costUsd: 0,
+          costUsd: estimateCost(model, { promptTokens: 0, cachedTokens: 0, completionTokens: 0 }),
           firstTokenMs: null,
           userAgent,
           message: `Failover to next provider: ${formatUpstreamFailure(provider.name, target, upstream.statusCode, upstreamError)}`,
@@ -224,7 +237,7 @@ server.all('/v1/*', async (clientRequest, reply) => {
           promptTokens: 0,
           completionTokens: 0,
           totalTokens: 0,
-          costUsd: 0,
+          costUsd: estimateCost(model, { promptTokens: 0, cachedTokens: 0, completionTokens: 0 }),
           firstTokenMs: null,
           userAgent,
           message,
@@ -264,9 +277,10 @@ server.all('/v1/*', async (clientRequest, reply) => {
           stream,
           billingMode: '按量',
           promptTokens: usage.promptTokens,
+          cachedTokens: usage.cachedTokens,
           completionTokens: usage.completionTokens,
           totalTokens: usage.totalTokens,
-          costUsd: 0,
+          costUsd: estimateCost(model, usage),
           firstTokenMs: null,
           userAgent,
         })
@@ -312,9 +326,10 @@ server.all('/v1/*', async (clientRequest, reply) => {
             stream,
             billingMode: '按量',
             promptTokens: result.usage.promptTokens,
+            cachedTokens: result.usage.cachedTokens,
             completionTokens: result.usage.completionTokens,
             totalTokens: result.usage.totalTokens,
-            costUsd: 0,
+            costUsd: estimateCost(model, result.usage),
             firstTokenMs: result.firstTokenMs,
             userAgent,
           })
@@ -364,9 +379,10 @@ server.all('/v1/*', async (clientRequest, reply) => {
         stream,
         billingMode: '按量',
         promptTokens: 0,
+        cachedTokens: 0,
         completionTokens: 0,
         totalTokens: 0,
-        costUsd: 0,
+        costUsd: estimateCost(model, { promptTokens: 0, cachedTokens: 0, completionTokens: 0 }),
         firstTokenMs: null,
         userAgent,
         message: lastError,
@@ -443,17 +459,39 @@ function isJsonResponse(contentType: unknown) {
   return typeof contentType === 'string' && contentType.includes('application/json')
 }
 
+function shouldFailoverStatus(statusCode: number) {
+  return statusCode < 200 || statusCode >= 400
+}
+
 function parseUsage(responseText: string) {
   try {
     const payload = JSON.parse(responseText)
     const usage = payload?.usage ?? {}
-    const promptTokens = Number(usage.prompt_tokens ?? usage.input_tokens ?? 0)
+    const inputTokens = Number(usage.prompt_tokens ?? usage.input_tokens ?? 0)
+    const inputDetails = usage.prompt_tokens_details ?? usage.input_tokens_details ?? {}
+    const cachedTokens = Number(inputDetails.cached_tokens ?? 0)
+    const promptTokens = Math.max(0, inputTokens - cachedTokens)
     const completionTokens = Number(usage.completion_tokens ?? usage.output_tokens ?? 0)
-    const totalTokens = Number(usage.total_tokens ?? promptTokens + completionTokens)
-    return { promptTokens, completionTokens, totalTokens }
+    const totalTokens = Number(usage.total_tokens ?? inputTokens + completionTokens)
+    return { promptTokens, cachedTokens, completionTokens, totalTokens }
   } catch {
-    return { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+    return { promptTokens: 0, cachedTokens: 0, completionTokens: 0, totalTokens: 0 }
   }
+}
+
+function estimateCost(model: string, usage: { promptTokens: number; cachedTokens?: number; completionTokens: number }) {
+  return estimateCostUsd(pricingTable, model, usage)
+}
+
+function recalculateLoggedCosts() {
+  updateRequestLogs((log) => ({
+    ...log,
+    costUsd: estimateCost(log.model, {
+      promptTokens: log.promptTokens,
+      cachedTokens: log.cachedTokens ?? 0,
+      completionTokens: log.completionTokens,
+    }),
+  }))
 }
 
 function proxyStreamingBody(
@@ -470,7 +508,7 @@ function proxyStreamingBody(
   let buffer = ''
   let completed = false
   let firstTokenMs: number | null = null
-  let usage: ReturnType<typeof parseUsage> = { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+  let usage: ReturnType<typeof parseUsage> = { promptTokens: 0, cachedTokens: 0, completionTokens: 0, totalTokens: 0 }
 
   ;(async () => {
     try {

@@ -18,7 +18,8 @@ export function selectProviders(config: GatewayConfig, model: string) {
     const preferred = matchingRule.providerIds
       .map((id) => enabled.find((provider) => provider.id === id))
       .filter(Boolean) as ProviderConfig[]
-    candidates = preferred.length ? preferred : enabled
+    const fallback = enabled.filter((provider) => !matchingRule.providerIds.includes(provider.id))
+    candidates = preferred.length ? [...preferred, ...fallback] : enabled
   }
 
   if (config.strategy === 'fastest') {

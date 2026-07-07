@@ -12,6 +12,7 @@
     "tauri:dev": "concurrently \"npm:dev:gateway\" \"tauri dev\"",
     "tauri:build": "tauri build",
     "test:fenno": "tsx tests/fenno-smoke.ts",
+    "test:router": "tsx tests/router-failover.ts",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -32,12 +33,14 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
+    "tailwindcss": "^4.3.2",
     "tsx": "^4.23.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"

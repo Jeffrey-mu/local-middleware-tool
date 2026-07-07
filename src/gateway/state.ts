@@ -33,6 +33,7 @@ export type RequestLog = {
   stream: boolean
   billingMode: string
   promptTokens: number
+  cachedTokens?: number
   completionTokens: number
   totalTokens: number
   costUsd: number
@@ -134,6 +135,11 @@ export function addRequestLog(log: RequestLog) {
 
 export function getRequestLogs() {
   return requestLogs
+}
+
+export function updateRequestLogs(updater: (log: RequestLog) => RequestLog) {
+  requestLogs.splice(0, requestLogs.length, ...requestLogs.map(updater))
+  persistRequestLogs()
 }
 
 function persistRequestLogs() {

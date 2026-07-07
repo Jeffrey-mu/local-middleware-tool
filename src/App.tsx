@@ -71,6 +71,7 @@ type GatewayConfig = {
 type GatewayStatus = {
   endpoint: string
   config: GatewayConfig
+  pricing: PricingTable
   metrics: {
     requests: number
     successes: number
@@ -94,6 +95,7 @@ type GatewayStatus = {
     stream: boolean
     billingMode: string
     promptTokens: number
+    cachedTokens?: number
     completionTokens: number
     totalTokens: number
     costUsd: number
@@ -125,6 +127,19 @@ type GatewayStatus = {
   }
 }
 
+type ModelPricing = {
+  model: string
+  inputUsdPerMillion: number
+  cachedInputUsdPerMillion: number
+  outputUsdPerMillion: number
+  source: string
+  updatedAt: string
+}
+
+type PricingTable = {
+  models: ModelPricing[]
+}
+
 type ChatMessage = {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -132,7 +147,7 @@ type ChatMessage = {
   state?: 'streaming' | 'error'
 }
 
-type ViewId = 'overview' | 'providers' | 'rules' | 'test' | 'logs'
+type ViewId = 'overview' | 'providers' | 'rules' | 'pricing' | 'test' | 'logs'
 
 const emptyProvider = (): Provider => ({
   id: crypto.randomUUID(),
@@ -154,7 +169,9 @@ function App() {
   const [saving, setSaving] = useState(false)
   const [autosaving, setAutosaving] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [pricingSaving, setPricingSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [pricing, setPricing] = useState<PricingTable>({ models: [] })
   const [chatInput, setChatInput] = useState('你好，简单介绍一下当前网关是否可用。')
   const [chatModel, setChatModel] = useState('gpt-5.4')
   const [chatStream, setChatStream] = useState(true)
@@ -173,6 +190,7 @@ function App() {
     const response = await fetch('/admin/status')
     const data = (await response.json()) as GatewayStatus
     setStatus(data)
+    setPricing(data.pricing)
     setConfig((current) => {
       if (options.forceConfig || !current || !configDirtyRef.current) {
         return data.config
@@ -188,6 +206,28 @@ function App() {
       await persistConfig(config)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function savePricing() {
+    setPricingSaving(true)
+    try {
+      const response = await fetch('/admin/pricing', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          models: pricing.models.map((item) => ({
+            ...item,
+            source: item.source.trim() || 'manual',
+            updatedAt: new Date().toISOString(),
+          })),
+        }),
+      })
+      if (!response.ok) throw new Error(`Pricing save failed with ${response.status}`)
+      setPricing((await response.json()) as PricingTable)
+      await refresh({ forceConfig: true })
+    } finally {
+      setPricingSaving(false)
     }
   }
 
@@ -264,6 +304,7 @@ function App() {
     { id: 'overview', label: '概览', icon: <Gauge size={17} />, meta: `${formatToken(analytics.totalRequests)} 次` },
     { id: 'providers', label: '服务商', icon: <Server size={17} />, meta: `${enabledProviders}/${config.providers.length}` },
     { id: 'rules', label: '路由', icon: <ListChecks size={17} />, meta: config.strategy },
+    { id: 'pricing', label: '定价', icon: <DollarSign size={17} />, meta: `${pricing.models.length}` },
     { id: 'test', label: '测试', icon: <MessageSquareText size={17} />, meta: chatStream ? '流式' : '非流式' },
     { id: 'logs', label: '日志', icon: <TerminalSquare size={17} />, meta: `${status.logs.length}` },
   ]
@@ -565,6 +606,83 @@ function App() {
           </section>
         )}
 
+        {activeView === 'pricing' && (
+          <section className="panel pricing-panel">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">本地存储</p>
+                <h3>模型定价</h3>
+              </div>
+              <div className="actions">
+                <button className="secondary-action" type="button" onClick={addPricingRow}>
+                  <Plus size={16} />
+                  添加模型
+                </button>
+                <button type="button" onClick={savePricing} disabled={pricingSaving}>
+                  <Save size={16} />
+                  {pricingSaving ? '保存中' : '保存定价'}
+                </button>
+              </div>
+            </div>
+
+            <div className="pricing-table">
+              <div className="pricing-head">
+                <span>模型</span>
+                <span>输入 $/1M</span>
+                <span>缓存输入 $/1M</span>
+                <span>输出 $/1M</span>
+                <span>来源</span>
+                <span>更新时间</span>
+              </div>
+              {pricing.models.map((item, index) => (
+                <div className="pricing-row" key={`${item.model}-${index}`}>
+                  <input
+                    aria-label="模型"
+                    value={item.model}
+                    onChange={(event) => updatePricingRow(index, { model: event.target.value })}
+                  />
+                  <input
+                    aria-label="输入价格"
+                    min={0}
+                    step="0.000001"
+                    type="number"
+                    value={item.inputUsdPerMillion}
+                    onChange={(event) => updatePricingRow(index, { inputUsdPerMillion: Number(event.target.value) })}
+                  />
+                  <input
+                    aria-label="缓存输入价格"
+                    min={0}
+                    step="0.000001"
+                    type="number"
+                    value={item.cachedInputUsdPerMillion}
+                    onChange={(event) => updatePricingRow(index, { cachedInputUsdPerMillion: Number(event.target.value) })}
+                  />
+                  <input
+                    aria-label="输出价格"
+                    min={0}
+                    step="0.000001"
+                    type="number"
+                    value={item.outputUsdPerMillion}
+                    onChange={(event) => updatePricingRow(index, { outputUsdPerMillion: Number(event.target.value) })}
+                  />
+                  <input
+                    aria-label="来源"
+                    value={item.source}
+                    onChange={(event) => updatePricingRow(index, { source: event.target.value })}
+                  />
+                  <div className="pricing-meta">
+                    <time>{item.updatedAt ? formatTime(item.updatedAt) : '未保存'}</time>
+                    <button className="text-action" type="button" onClick={() => removePricingRow(index)}>
+                      删除
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {!pricing.models.length && <p className="empty">暂无模型定价。添加后，费用统计会按这里的价格重新用于新请求。</p>}
+            </div>
+          </section>
+        )}
+
         {activeView === 'logs' && (
           <section className="panel usage-panel">
             <div className="panel-title">
@@ -594,6 +712,34 @@ function App() {
   function updateConfig(nextConfig: GatewayConfig) {
     configDirtyRef.current = true
     setConfig(nextConfig)
+  }
+
+  function addPricingRow() {
+    setPricing((current) => ({
+      models: [
+        ...current.models,
+        {
+          model: '',
+          inputUsdPerMillion: 0,
+          cachedInputUsdPerMillion: 0,
+          outputUsdPerMillion: 0,
+          source: 'manual',
+          updatedAt: '',
+        },
+      ],
+    }))
+  }
+
+  function updatePricingRow(index: number, patch: Partial<ModelPricing>) {
+    setPricing((current) => ({
+      models: current.models.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item),
+    }))
+  }
+
+  function removePricingRow(index: number) {
+    setPricing((current) => ({
+      models: current.models.filter((_, itemIndex) => itemIndex !== index),
+    }))
   }
 
   async function sendTestMessage(event: React.FormEvent<HTMLFormElement>) {
@@ -727,6 +873,7 @@ function UsageTable({ logs }: { logs: GatewayStatus['logs'] }) {
           <span className="numeric token-cell">
             <b>↓ {log.promptTokens.toLocaleString()}</b>
             <b>↑ {log.completionTokens.toLocaleString()}</b>
+            {Boolean(log.cachedTokens) && <small>R {formatToken(log.cachedTokens ?? 0)}</small>}
             <small>Σ {formatToken(log.totalTokens)}</small>
           </span>
           <span className="numeric cost">{formatUsd(log.costUsd)}</span>
@@ -745,6 +892,7 @@ function viewTitle(view: ViewId) {
     overview: '运行概览',
     providers: '服务商管理',
     rules: '路由与熔断',
+    pricing: '模型定价',
     test: '请求测试',
     logs: '请求日志',
   }
@@ -774,7 +922,7 @@ function formatMs(value: number) {
 }
 
 function formatUsd(value: number) {
-  return `$${value.toFixed(4)}`
+  return `$${value.toFixed(6)}`
 }
 
 function formatTime(value: string) {
