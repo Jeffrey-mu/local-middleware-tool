@@ -1,17 +1,23 @@
-use super::config::{load_config, provider_auth_key, save_config, trim_provider_base_url, GatewayConfig, ProviderConfig};
+use super::config::{
+    load_config, provider_auth_key, save_config, trim_provider_base_url, GatewayConfig,
+    ProviderConfig,
+};
 use super::paths::data_dir;
-use super::pricing::{estimate_cost_usd, load_pricing_table, parse_usage, save_pricing_table, PricingTable, TokenUsage};
+use super::pricing::{
+    estimate_cost_usd, load_pricing_table, parse_usage, save_pricing_table, PricingTable,
+    TokenUsage,
+};
 use super::router::{metrics_summary, select_providers, should_failover_status};
 use super::state::{GatewayState, RequestLog};
 use anyhow::Result;
-use axum::body::Body;
+use axum::body::{Body, Bytes};
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{any, get, post, put};
 use axum::{Json, Router};
 use chrono::Utc;
-use futures_util::StreamExt;
+use futures_util::{Stream, StreamExt};
 use nanoid::nanoid;
 use reqwest::Client;
 use serde::Serialize;
@@ -76,7 +82,12 @@ pub async fn run() -> Result<()> {
         .route("/admin/pricing", get(admin_pricing).put(admin_pricing_put))
         .route("/admin/health-check", post(admin_health_check))
         .route("/v1/{*path}", any(proxy_v1))
-        .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .with_state(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
@@ -103,7 +114,10 @@ async fn admin_trace() -> Json<Value> {
     Json(json!({ "traces": read_trace_events().await }))
 }
 
-async fn admin_config(State(state): State<AppState>, Json(config): Json<GatewayConfig>) -> impl IntoResponse {
+async fn admin_config(
+    State(state): State<AppState>,
+    Json(config): Json<GatewayConfig>,
+) -> impl IntoResponse {
     match save_config(config).await {
         Ok(config) => {
             let mut inner = state.inner.lock().await;
@@ -112,7 +126,10 @@ async fn admin_config(State(state): State<AppState>, Json(config): Json<GatewayC
             for provider in &providers {
                 inner.gateway_state.ensure_provider_status(provider);
             }
-            (StatusCode::OK, Json(json!({ "ok": true, "config": config })))
+            (
+                StatusCode::OK,
+                Json(json!({ "ok": true, "config": config })),
+            )
         }
         Err(error) => error_response(StatusCode::BAD_REQUEST, error.to_string()),
     }
@@ -123,7 +140,10 @@ async fn admin_pricing(State(state): State<AppState>) -> Json<PricingTable> {
     Json(inner.pricing.clone())
 }
 
-async fn admin_pricing_put(State(state): State<AppState>, Json(table): Json<PricingTable>) -> impl IntoResponse {
+async fn admin_pricing_put(
+    State(state): State<AppState>,
+    Json(table): Json<PricingTable>,
+) -> impl IntoResponse {
     match save_pricing_table(table).await {
         Ok(table) => {
             {
@@ -148,7 +168,9 @@ async fn admin_health_check(State(state): State<AppState>) -> impl IntoResponse 
         let mut inner = state.inner.lock().await;
         let breaker = inner.config.circuit_breaker.clone();
         if result.ok {
-            inner.gateway_state.record_success(&provider, result.latency_ms, false);
+            inner
+                .gateway_state
+                .record_success(&provider, result.latency_ms, false);
         } else {
             inner.gateway_state.record_failure(
                 &provider,
@@ -163,7 +185,10 @@ async fn admin_health_check(State(state): State<AppState>) -> impl IntoResponse 
     }
 
     let inner = state.inner.lock().await;
-    (StatusCode::OK, Json(json!({ "ok": true, "providers": inner.gateway_state.provider_statuses() })))
+    (
+        StatusCode::OK,
+        Json(json!({ "ok": true, "providers": inner.gateway_state.provider_statuses() })),
+    )
 }
 
 async fn proxy_v1(
@@ -176,7 +201,10 @@ async fn proxy_v1(
     let client_path = format!("/v1/{path}");
     let upstream_path = format!("/{path}");
     let body_value = serde_json::from_slice::<Value>(&body).ok();
-    let model = body_value.as_ref().and_then(get_model_name).unwrap_or_else(|| "unknown".into());
+    let model = body_value
+        .as_ref()
+        .and_then(get_model_name)
+        .unwrap_or_else(|| "unknown".into());
     let stream = body_value.as_ref().is_some_and(is_streaming_request);
     let user_agent = header_string(&headers, "user-agent");
     let api_key_name = format_api_key_name(&header_string(&headers, "authorization"));
@@ -185,20 +213,33 @@ async fn proxy_v1(
         let mut inner = state.inner.lock().await;
         let config = inner.config.clone();
         let mut round_robin_index = inner.round_robin_index;
-        let providers = select_providers(&config, &mut inner.gateway_state, &model, &mut round_robin_index);
+        let providers = select_providers(
+            &config,
+            &mut inner.gateway_state,
+            &model,
+            &mut round_robin_index,
+        );
         inner.round_robin_index = round_robin_index;
         providers
     };
 
     if providers.is_empty() {
-        return json_error(StatusCode::SERVICE_UNAVAILABLE, "No enabled provider is available.", "gateway_unavailable");
+        return json_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "No enabled provider is available.",
+            "gateway_unavailable",
+        );
     }
 
     let mut last_error = "All providers failed.".to_string();
 
     for (retry, provider) in providers.iter().enumerate() {
         let started = Instant::now();
-        let target = format!("{}{}", trim_provider_base_url(&provider.base_url), upstream_path);
+        let target = format!(
+            "{}{}",
+            trim_provider_base_url(&provider.base_url),
+            upstream_path
+        );
         let upstream = state
             .client
             .request(method.clone(), &target)
@@ -217,7 +258,12 @@ async fn proxy_v1(
 
                 if should_failover_status(status_code) && retry < providers.len() - 1 {
                     let detail = upstream.text().await.unwrap_or_default();
-                    last_error = format_upstream_failure(&provider.name, &target, status_code, &summarize_text(&detail));
+                    last_error = format_upstream_failure(
+                        &provider.name,
+                        &target,
+                        status_code,
+                        &summarize_text(&detail),
+                    );
                     record_failed_attempt(
                         &state,
                         provider,
@@ -238,30 +284,41 @@ async fn proxy_v1(
 
                 if stream {
                     let mut response = Response::builder().status(status);
-                    copy_response_headers(response.headers_mut().expect("headers"), &response_headers);
-                    let byte_stream = upstream.bytes_stream().map(|chunk| chunk.map_err(std::io::Error::other));
-                    record_success_attempt(
-                        &state,
-                        provider,
-                        status_code,
-                        latency_ms,
-                        retry,
-                        &api_key_name,
-                        &model,
-                        &client_path,
-                        &method,
-                        stream::empty_usage(),
-                        true,
-                        &user_agent,
-                    )
-                    .await;
-                    return response.body(Body::from_stream(byte_stream)).unwrap_or_else(|error| {
-                        json_error(StatusCode::BAD_GATEWAY, &error.to_string(), "gateway_stream_error")
-                    });
+                    copy_response_headers(
+                        response.headers_mut().expect("headers"),
+                        &response_headers,
+                    );
+                    let byte_stream = proxy_streaming_body(
+                        upstream.bytes_stream(),
+                        StreamLogContext {
+                            state: state.clone(),
+                            provider: provider.clone(),
+                            status_code,
+                            retry,
+                            api_key_name: api_key_name.clone(),
+                            model: model.clone(),
+                            path: client_path.clone(),
+                            method: method.clone(),
+                            user_agent: user_agent.clone(),
+                            started,
+                            first_token_started: Instant::now(),
+                        },
+                    );
+                    return response
+                        .body(Body::from_stream(byte_stream))
+                        .unwrap_or_else(|error| {
+                            json_error(
+                                StatusCode::BAD_GATEWAY,
+                                &error.to_string(),
+                                "gateway_stream_error",
+                            )
+                        });
                 }
 
                 let text = upstream.text().await.unwrap_or_default();
-                let usage = serde_json::from_str::<Value>(&text).map(|payload| parse_usage(&payload)).unwrap_or_default();
+                let usage = serde_json::from_str::<Value>(&text)
+                    .map(|payload| parse_usage(&payload))
+                    .unwrap_or_default();
                 record_success_attempt(
                     &state,
                     provider,
@@ -275,18 +332,26 @@ async fn proxy_v1(
                     usage,
                     stream,
                     &user_agent,
+                    None,
                 )
                 .await;
 
                 let mut response = Response::builder().status(status);
                 copy_response_headers(response.headers_mut().expect("headers"), &response_headers);
                 return response.body(Body::from(text)).unwrap_or_else(|error| {
-                    json_error(StatusCode::BAD_GATEWAY, &error.to_string(), "gateway_response_error")
+                    json_error(
+                        StatusCode::BAD_GATEWAY,
+                        &error.to_string(),
+                        "gateway_response_error",
+                    )
                 });
             }
             Err(error) => {
                 let latency_ms = started.elapsed().as_millis() as u64;
-                last_error = format!("Provider {} request failed at {}: {}", provider.name, target, error);
+                last_error = format!(
+                    "Provider {} request failed at {}: {}",
+                    provider.name, target, error
+                );
                 record_error_attempt(
                     &state,
                     provider,
@@ -306,7 +371,58 @@ async fn proxy_v1(
         }
     }
 
-    json_error(StatusCode::BAD_GATEWAY, &last_error, "gateway_provider_error")
+    json_error(
+        StatusCode::BAD_GATEWAY,
+        &last_error,
+        "gateway_provider_error",
+    )
+}
+
+struct StreamLogContext {
+    state: AppState,
+    provider: ProviderConfig,
+    status_code: u16,
+    retry: usize,
+    api_key_name: String,
+    model: String,
+    path: String,
+    method: Method,
+    user_agent: String,
+    started: Instant,
+    first_token_started: Instant,
+}
+
+fn proxy_streaming_body(
+    mut upstream: impl Stream<Item = Result<Bytes, reqwest::Error>> + Unpin + Send + 'static,
+    context: StreamLogContext,
+) -> impl Stream<Item = Result<Bytes, std::io::Error>> {
+    async_stream::try_stream! {
+        let mut parser = stream::SseUsageParser::default();
+
+        while let Some(chunk) = upstream.next().await {
+            let chunk = chunk.map_err(std::io::Error::other)?;
+            parser.push_chunk(&chunk, context.first_token_started);
+            yield chunk;
+        }
+
+        let latency_ms = context.started.elapsed().as_millis() as u64;
+        record_success_attempt(
+            &context.state,
+            &context.provider,
+            context.status_code,
+            latency_ms,
+            context.retry,
+            &context.api_key_name,
+            &context.model,
+            &context.path,
+            &context.method,
+            parser.usage(),
+            true,
+            &context.user_agent,
+            parser.first_token_ms(),
+        )
+        .await;
+    }
 }
 
 async fn record_failed_attempt(
@@ -325,8 +441,31 @@ async fn record_failed_attempt(
 ) {
     let mut inner = state.inner.lock().await;
     let breaker = inner.config.circuit_breaker.clone();
-    inner.gateway_state.record_failure(provider, latency_ms, Some(status_code), false, breaker.failure_threshold, breaker.cooldown_ms, true);
-    let log = request_log(provider, serde_json::Value::from(status_code), latency_ms, retry, api_key_name, model, path, method, stream, TokenUsage::default(), 0.0, None, user_agent, message);
+    inner.gateway_state.record_failure(
+        provider,
+        latency_ms,
+        Some(status_code),
+        false,
+        breaker.failure_threshold,
+        breaker.cooldown_ms,
+        true,
+    );
+    let log = request_log(
+        provider,
+        serde_json::Value::from(status_code),
+        latency_ms,
+        retry,
+        api_key_name,
+        model,
+        path,
+        method,
+        stream,
+        TokenUsage::default(),
+        0.0,
+        None,
+        user_agent,
+        message,
+    );
     inner.gateway_state.add_request_log(log).await;
 }
 
@@ -346,9 +485,36 @@ async fn record_error_attempt(
 ) {
     let mut inner = state.inner.lock().await;
     let breaker = inner.config.circuit_breaker.clone();
-    inner.gateway_state.record_failure(provider, latency_ms, None, timeout, breaker.failure_threshold, breaker.cooldown_ms, true);
-    let status = if timeout { json!("timeout") } else { json!("error") };
-    let log = request_log(provider, status, latency_ms, retry, api_key_name, model, path, method, stream, TokenUsage::default(), 0.0, None, user_agent, Some(message.into()));
+    inner.gateway_state.record_failure(
+        provider,
+        latency_ms,
+        None,
+        timeout,
+        breaker.failure_threshold,
+        breaker.cooldown_ms,
+        true,
+    );
+    let status = if timeout {
+        json!("timeout")
+    } else {
+        json!("error")
+    };
+    let log = request_log(
+        provider,
+        status,
+        latency_ms,
+        retry,
+        api_key_name,
+        model,
+        path,
+        method,
+        stream,
+        TokenUsage::default(),
+        0.0,
+        None,
+        user_agent,
+        Some(message.into()),
+    );
     inner.gateway_state.add_request_log(log).await;
 }
 
@@ -365,11 +531,29 @@ async fn record_success_attempt(
     usage: TokenUsage,
     stream: bool,
     user_agent: &str,
+    first_token_ms: Option<u64>,
 ) {
     let mut inner = state.inner.lock().await;
-    inner.gateway_state.record_success(provider, latency_ms, true);
+    inner
+        .gateway_state
+        .record_success(provider, latency_ms, true);
     let cost = estimate_cost_usd(&inner.pricing, model, &usage);
-    let log = request_log(provider, serde_json::Value::from(status_code), latency_ms, retry, api_key_name, model, path, method, stream, usage, cost, None, user_agent, None);
+    let log = request_log(
+        provider,
+        serde_json::Value::from(status_code),
+        latency_ms,
+        retry,
+        api_key_name,
+        model,
+        path,
+        method,
+        stream,
+        usage,
+        cost,
+        first_token_ms,
+        user_agent,
+        None,
+    );
     inner.gateway_state.add_request_log(log).await;
 }
 
@@ -455,7 +639,9 @@ async fn probe_provider(client: &Client, provider: &ProviderConfig) -> ProbeResu
         let response = client
             .get(url)
             .headers(headers.clone())
-            .timeout(std::time::Duration::from_millis(provider.timeout_ms.min(10_000)))
+            .timeout(std::time::Duration::from_millis(
+                provider.timeout_ms.min(10_000),
+            ))
             .send()
             .await;
 
@@ -485,11 +671,17 @@ async fn probe_provider(client: &Client, provider: &ProviderConfig) -> ProbeResu
 }
 
 fn get_model_name(payload: &Value) -> Option<String> {
-    payload.get("model").and_then(Value::as_str).map(str::to_string)
+    payload
+        .get("model")
+        .and_then(Value::as_str)
+        .map(str::to_string)
 }
 
 fn is_streaming_request(payload: &Value) -> bool {
-    payload.get("stream").and_then(Value::as_bool).unwrap_or(false)
+    payload
+        .get("stream")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
 }
 
 fn forward_headers(headers: &HeaderMap, provider: &ProviderConfig) -> HeaderMap {
@@ -531,7 +723,11 @@ fn format_api_key_name(authorization: &str) -> String {
     if token.is_empty() {
         "未提供".into()
     } else if token.starts_with("sk-") && token.len() > 10 {
-        format!("{}...{}", &token[..6], &token[token.len().saturating_sub(4)..])
+        format!(
+            "{}...{}",
+            &token[..6],
+            &token[token.len().saturating_sub(4)..]
+        )
     } else if token.len() > 18 {
         format!("{}...", &token[..12])
     } else {
@@ -542,37 +738,67 @@ fn format_api_key_name(authorization: &str) -> String {
 fn summarize_text(text: &str) -> String {
     serde_json::from_str::<Value>(text)
         .ok()
-        .and_then(|payload| payload.pointer("/error/message").or_else(|| payload.get("message")).and_then(Value::as_str).map(str::to_string))
+        .and_then(|payload| {
+            payload
+                .pointer("/error/message")
+                .or_else(|| payload.get("message"))
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
         .unwrap_or_else(|| text.split_whitespace().collect::<Vec<_>>().join(" "))
         .chars()
         .take(500)
         .collect()
 }
 
-fn format_upstream_failure(provider_name: &str, target: &str, status_code: u16, detail: &str) -> String {
-    let suffix = if detail.is_empty() { String::new() } else { format!(": {detail}") };
+fn format_upstream_failure(
+    provider_name: &str,
+    target: &str,
+    status_code: u16,
+    detail: &str,
+) -> String {
+    let suffix = if detail.is_empty() {
+        String::new()
+    } else {
+        format!(": {detail}")
+    };
     format!("Provider {provider_name} returned {status_code} from {target}{suffix}")
 }
 
 fn json_error(status: StatusCode, message: &str, error_type: &str) -> Response {
-    (status, Json(json!({ "error": { "message": message, "type": error_type } }))).into_response()
+    (
+        status,
+        Json(json!({ "error": { "message": message, "type": error_type } })),
+    )
+        .into_response()
 }
 
 fn error_response(status: StatusCode, message: String) -> (StatusCode, Json<Value>) {
-    (status, Json(json!({ "error": { "message": message, "type": "gateway_request_error" } })))
+    (
+        status,
+        Json(json!({ "error": { "message": message, "type": "gateway_request_error" } })),
+    )
 }
 
 fn build_analytics(logs: &[RequestLog]) -> Value {
     let successes: Vec<&RequestLog> = logs
         .iter()
-        .filter(|log| log.status.as_u64().is_some_and(|status| (200..400).contains(&status)))
+        .filter(|log| {
+            log.status
+                .as_u64()
+                .is_some_and(|status| (200..400).contains(&status))
+        })
         .collect();
     let total_tokens: u64 = logs.iter().map(|log| log.total_tokens).sum();
     let total_cost: f64 = logs.iter().map(|log| log.cost_usd).sum();
     let avg_latency_ms = if successes.is_empty() {
         0.0
     } else {
-        successes.iter().map(|log| log.latency_ms as f64).sum::<f64>() / successes.len() as f64
+        successes
+            .iter()
+            .map(|log| log.latency_ms as f64)
+            .sum::<f64>()
+            / successes.len() as f64
     };
 
     json!({
@@ -648,9 +874,105 @@ async fn read_trace_events() -> Vec<Value> {
 }
 
 mod stream {
-    use super::TokenUsage;
+    use super::{parse_usage, Instant, TokenUsage};
+    use axum::body::Bytes;
 
-    pub fn empty_usage() -> TokenUsage {
-        TokenUsage::default()
+    #[derive(Default)]
+    pub struct SseUsageParser {
+        buffer: String,
+        usage: TokenUsage,
+        first_token_ms: Option<u64>,
+    }
+
+    impl SseUsageParser {
+        pub fn push_chunk(&mut self, chunk: &Bytes, first_token_started: Instant) {
+            let text = String::from_utf8_lossy(chunk);
+            if text.is_empty() {
+                return;
+            }
+
+            self.buffer.push_str(&text);
+            while let Some(frame_end) = self.buffer.find("\n\n") {
+                let frame = self.buffer[..frame_end].to_string();
+                self.buffer.drain(..frame_end + 2);
+                self.parse_frame(&frame, first_token_started);
+            }
+        }
+
+        pub fn usage(&self) -> TokenUsage {
+            self.usage.clone()
+        }
+
+        pub fn first_token_ms(&self) -> Option<u64> {
+            self.first_token_ms
+        }
+
+        fn parse_frame(&mut self, frame: &str, first_token_started: Instant) {
+            let data = frame
+                .lines()
+                .filter_map(|line| line.strip_prefix("data:").map(str::trim_start))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            if data.is_empty() || data == "[DONE]" {
+                return;
+            }
+
+            let Ok(payload) = serde_json::from_str::<serde_json::Value>(&data) else {
+                return;
+            };
+
+            if payload
+                .get("type")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|event_type| event_type == "response.output_text.delta")
+                && self.first_token_ms.is_none()
+            {
+                self.first_token_ms = Some(first_token_started.elapsed().as_millis() as u64);
+            }
+
+            if payload
+                .get("type")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|event_type| event_type == "response.completed")
+            {
+                if let Some(response) = payload.get("response") {
+                    self.usage = parse_usage(response);
+                }
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn parses_usage_from_split_response_completed_frame() {
+            let mut parser = SseUsageParser::default();
+            let started = Instant::now();
+            let first = Bytes::from_static(
+                br#"data: {"type":"response.output_text.delta","delta":"hi"}
+
+data: {"type":"response.completed","response":{"usage":{"input_tokens":12,"input_tokens_details":{"cached_tokens":2},"output_tokens":7,"total_tokens":19"#,
+            );
+            let second = Bytes::from_static(
+                br#"}}}
+
+data: [DONE]
+
+"#,
+            );
+
+            parser.push_chunk(&first, started);
+            parser.push_chunk(&second, started);
+
+            let usage = parser.usage();
+            assert_eq!(usage.prompt_tokens, 10);
+            assert_eq!(usage.cached_tokens, 2);
+            assert_eq!(usage.completion_tokens, 7);
+            assert_eq!(usage.total_tokens, 19);
+            assert!(parser.first_token_ms().is_some());
+        }
     }
 }
