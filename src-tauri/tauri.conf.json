@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CCSwitch",
+  "productName": "AIGate",
   "version": "0.1.0",
-  "identifier": "dev.local.ccswitch",
+  "identifier": "dev.local.aigate",
   "build": {
     "beforeDevCommand": "npm run dev:ui",
     "beforeBuildCommand": "npm run build:gateway && npm run build",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "CCSwitch",
+        "title": "AIGate",
         "width": 1280,
         "height": 820,
         "minWidth": 1040,
@@ -40,7 +40,7 @@
       "../data/model-pricing.json"
     ],
     "externalBin": [
-      "binaries/ccswitch-gateway"
+      "binaries/aigate-gateway"
     ],
     "icon": [
       "icons/icon.png",

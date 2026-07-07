@@ -1,43 +1,29 @@
 {
-  "name": "local-middleware-tool",
+  "name": "aigate",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm:dev:gateway\" \"npm:dev:ui\"",
+    "dev": "npm run tauri:dev",
     "dev:ui": "vite",
-    "dev:gateway": "npm run dev:gateway:node",
-    "dev:gateway:node": "tsx watch src/gateway/server.ts",
-    "dev:gateway:rust": "cargo run --manifest-path src-tauri/Cargo.toml --bin ccswitch-gateway",
+    "dev:gateway:rust": "cargo run --manifest-path src-tauri/Cargo.toml --bin aigate-gateway",
     "build:gateway": "node scripts/build-gateway-sidecar.mjs",
     "gateway": "npm run gateway:rust",
-    "gateway:rust": "cargo run --manifest-path src-tauri/Cargo.toml --bin ccswitch-gateway",
-    "gateway:node": "tsx src/gateway/server.ts",
+    "gateway:rust": "cargo run --manifest-path src-tauri/Cargo.toml --bin aigate-gateway",
     "tauri": "tauri",
-    "tauri:dev": "concurrently \"npm:dev:gateway\" \"tauri dev\"",
-    "tauri:dev:rust": "concurrently \"npm:dev:gateway:rust\" \"tauri dev\"",
+    "tauri:dev": "concurrently \"npm:dev:gateway:rust\" \"tauri dev\"",
     "tauri:build": "npm run build:gateway && tauri build",
     "tauri:build:win": "npm run build:gateway && tauri build --bundles nsis",
-    "test:fenno": "tsx tests/fenno-smoke.ts",
-    "test:router": "tsx tests/router-failover.ts",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
     "@tauri-apps/api": "^2.11.1",
     "concurrently": "^10.0.3",
-    "fastify": "^5.10.0",
     "lucide-react": "^1.23.0",
-    "nanoid": "^5.1.16",
-    "node-cron": "^4.6.0",
-    "pino": "^10.3.1",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "undici": "^8.7.0",
-    "ws": "^8.21.0",
-    "zod": "^4.4.3"
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",
@@ -49,7 +35,6 @@
     "esbuild": "^0.28.1",
     "oxlint": "^1.71.0",
     "tailwindcss": "^4.3.2",
-    "tsx": "^4.23.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }

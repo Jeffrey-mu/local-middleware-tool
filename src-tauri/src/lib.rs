@@ -64,7 +64,7 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("error while building CCSwitch")
+        .expect("error while building AIGate")
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit) {
                 shutdown_gateway_sidecar(app);
@@ -97,13 +97,13 @@ fn start_gateway_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::erro
     {
         let data_dir = app.path().app_data_dir()?;
         std::fs::create_dir_all(&data_dir)?;
-        let gateway = find_gateway_binary(app).ok_or("ccswitch-gateway sidecar not found")?;
+        let gateway = find_gateway_binary(app).ok_or("aigate-gateway sidecar not found")?;
         let log_path = data_dir.join("gateway-sidecar.log");
         let stdout = OpenOptions::new().create(true).append(true).open(&log_path)?;
         let stderr = OpenOptions::new().create(true).append(true).open(&log_path)?;
 
         let child = Command::new(gateway)
-            .env("CCSWITCH_DATA_DIR", data_dir)
+            .env("AIGATE_DATA_DIR", data_dir)
             .env("NO_PROXY", "127.0.0.1,localhost,::1,0.0.0.0,*.local,<local>")
             .env("no_proxy", "127.0.0.1,localhost,::1,0.0.0.0,*.local,<local>")
             .stdin(Stdio::null())
@@ -144,56 +144,56 @@ fn gateway_sidecar_names() -> &'static [&'static str] {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     {
         &[
-            "ccswitch-gateway-aarch64-apple-darwin",
-            "ccswitch-gateway",
+            "aigate-gateway-aarch64-apple-darwin",
+            "aigate-gateway",
         ]
     }
 
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     {
         &[
-            "ccswitch-gateway-x86_64-apple-darwin",
-            "ccswitch-gateway",
+            "aigate-gateway-x86_64-apple-darwin",
+            "aigate-gateway",
         ]
     }
 
     #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "msvc"))]
     {
         &[
-            "ccswitch-gateway-x86_64-pc-windows-msvc.exe",
-            "ccswitch-gateway.exe",
+            "aigate-gateway-x86_64-pc-windows-msvc.exe",
+            "aigate-gateway.exe",
         ]
     }
 
     #[cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "msvc"))]
     {
         &[
-            "ccswitch-gateway-aarch64-pc-windows-msvc.exe",
-            "ccswitch-gateway.exe",
+            "aigate-gateway-aarch64-pc-windows-msvc.exe",
+            "aigate-gateway.exe",
         ]
     }
 
     #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "gnu"))]
     {
         &[
-            "ccswitch-gateway-x86_64-pc-windows-gnu.exe",
-            "ccswitch-gateway.exe",
+            "aigate-gateway-x86_64-pc-windows-gnu.exe",
+            "aigate-gateway.exe",
         ]
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     {
         &[
-            "ccswitch-gateway-x86_64-unknown-linux-gnu",
-            "ccswitch-gateway",
+            "aigate-gateway-x86_64-unknown-linux-gnu",
+            "aigate-gateway",
         ]
     }
 
     #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
     {
         &[
-            "ccswitch-gateway-aarch64-unknown-linux-gnu",
-            "ccswitch-gateway",
+            "aigate-gateway-aarch64-unknown-linux-gnu",
+            "aigate-gateway",
         ]
     }
 }
@@ -204,7 +204,7 @@ fn ensure_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     }
 
     WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-        .title("CCSwitch")
+        .title("AIGate")
         .inner_size(1280.0, 820.0)
         .min_inner_size(1040.0, 680.0)
         .center()

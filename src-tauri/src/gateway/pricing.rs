@@ -124,7 +124,7 @@ async fn restore_seed_pricing_table() -> Result<PricingTable> {
 fn seed_pricing_path() -> Option<PathBuf> {
     let mut candidates = Vec::new();
 
-    if let Ok(path) = std::env::var("CCSWITCH_PRICING_SEED") {
+    if let Ok(path) = std::env::var("AIGATE_PRICING_SEED") {
         candidates.push(PathBuf::from(path));
     }
 
@@ -157,7 +157,7 @@ mod tests {
 
     #[tokio::test]
     async fn restores_seed_when_existing_pricing_table_is_empty() {
-        let test_dir = std::env::temp_dir().join(format!("ccswitch-pricing-{}", nanoid::nanoid!()));
+        let test_dir = std::env::temp_dir().join(format!("aigate-pricing-{}", nanoid::nanoid!()));
         tokio::fs::create_dir_all(&test_dir).await.unwrap();
         tokio::fs::write(test_dir.join("model-pricing.json"), r#"{"models":[]}"#)
             .await
@@ -167,23 +167,23 @@ mod tests {
             .parent()
             .unwrap()
             .join("data/model-pricing.json");
-        let previous_data_dir = std::env::var("CCSWITCH_DATA_DIR").ok();
-        let previous_seed = std::env::var("CCSWITCH_PRICING_SEED").ok();
+        let previous_data_dir = std::env::var("AIGATE_DATA_DIR").ok();
+        let previous_seed = std::env::var("AIGATE_PRICING_SEED").ok();
 
-        std::env::set_var("CCSWITCH_DATA_DIR", &test_dir);
-        std::env::set_var("CCSWITCH_PRICING_SEED", seed_path);
+        std::env::set_var("AIGATE_DATA_DIR", &test_dir);
+        std::env::set_var("AIGATE_PRICING_SEED", seed_path);
 
         let table = load_pricing_table().await.unwrap();
 
         if let Some(value) = previous_data_dir {
-            std::env::set_var("CCSWITCH_DATA_DIR", value);
+            std::env::set_var("AIGATE_DATA_DIR", value);
         } else {
-            std::env::remove_var("CCSWITCH_DATA_DIR");
+            std::env::remove_var("AIGATE_DATA_DIR");
         }
         if let Some(value) = previous_seed {
-            std::env::set_var("CCSWITCH_PRICING_SEED", value);
+            std::env::set_var("AIGATE_PRICING_SEED", value);
         } else {
-            std::env::remove_var("CCSWITCH_PRICING_SEED");
+            std::env::remove_var("AIGATE_PRICING_SEED");
         }
         let _ = tokio::fs::remove_dir_all(&test_dir).await;
 

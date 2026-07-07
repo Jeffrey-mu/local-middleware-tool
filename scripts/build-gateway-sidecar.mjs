@@ -7,10 +7,10 @@ import { spawn } from 'node:child_process'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const tauriDir = resolve(root, 'src-tauri')
 const targetTriple = await resolveTargetTriple()
-const binaryName = platform() === 'win32' ? 'ccswitch-gateway.exe' : 'ccswitch-gateway'
+const binaryName = platform() === 'win32' ? 'aigate-gateway.exe' : 'aigate-gateway'
 const sidecarName = platform() === 'win32'
-  ? `ccswitch-gateway-${targetTriple}.exe`
-  : `ccswitch-gateway-${targetTriple}`
+  ? `aigate-gateway-${targetTriple}.exe`
+  : `aigate-gateway-${targetTriple}`
 const sourceBinary = resolve(tauriDir, 'target', targetTriple, 'release', binaryName)
 const sidecarBinary = resolve(tauriDir, 'binaries', sidecarName)
 
@@ -31,7 +31,7 @@ await run('cargo', [
   '--target',
   targetTriple,
   '--bin',
-  'ccswitch-gateway',
+  'aigate-gateway',
 ])
 
 await copyFile(sourceBinary, sidecarBinary)

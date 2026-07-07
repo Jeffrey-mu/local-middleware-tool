@@ -1,18 +1,18 @@
 [package]
-name = "ccswitch"
+name = "aigate"
 version = "0.1.0"
 description = "Local OpenAI-compatible gateway desktop shell"
-authors = ["CCSwitch"]
+authors = ["AIGate"]
 edition = "2021"
-default-run = "ccswitch"
+default-run = "aigate"
 
 [lib]
-name = "ccswitch_lib"
+name = "aigate_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "ccswitch-gateway"
-path = "src/bin/ccswitch-gateway.rs"
+name = "aigate-gateway"
+path = "src/bin/aigate-gateway.rs"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

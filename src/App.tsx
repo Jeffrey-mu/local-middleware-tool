@@ -320,7 +320,7 @@ function App() {
           </div>
           <div>
             <p>Local Gateway</p>
-            <h1>CCSwitch</h1>
+            <h1>AIGate</h1>
           </div>
         </div>
 
