@@ -119,21 +119,83 @@ fn start_gateway_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::erro
 #[cfg(not(debug_assertions))]
 fn find_gateway_binary(app: &tauri::AppHandle) -> Option<PathBuf> {
     let mut candidates = Vec::new();
+    let sidecar_names = gateway_sidecar_names();
 
     if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join("ccswitch-gateway"));
-        candidates.push(resource_dir.join("ccswitch-gateway-aarch64-apple-darwin"));
-        candidates.push(resource_dir.join("_up_/binaries/ccswitch-gateway-aarch64-apple-darwin"));
+        for name in sidecar_names {
+            candidates.push(resource_dir.join(name));
+            candidates.push(resource_dir.join("_up_/binaries").join(name));
+        }
     }
 
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            candidates.push(dir.join("ccswitch-gateway"));
-            candidates.push(dir.join("ccswitch-gateway-aarch64-apple-darwin"));
+            for name in sidecar_names {
+                candidates.push(dir.join(name));
+            }
         }
     }
 
     candidates.into_iter().find(|candidate| candidate.is_file())
+}
+
+#[cfg(not(debug_assertions))]
+fn gateway_sidecar_names() -> &'static [&'static str] {
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    {
+        &[
+            "ccswitch-gateway-aarch64-apple-darwin",
+            "ccswitch-gateway",
+        ]
+    }
+
+    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+    {
+        &[
+            "ccswitch-gateway-x86_64-apple-darwin",
+            "ccswitch-gateway",
+        ]
+    }
+
+    #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "msvc"))]
+    {
+        &[
+            "ccswitch-gateway-x86_64-pc-windows-msvc.exe",
+            "ccswitch-gateway.exe",
+        ]
+    }
+
+    #[cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "msvc"))]
+    {
+        &[
+            "ccswitch-gateway-aarch64-pc-windows-msvc.exe",
+            "ccswitch-gateway.exe",
+        ]
+    }
+
+    #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "gnu"))]
+    {
+        &[
+            "ccswitch-gateway-x86_64-pc-windows-gnu.exe",
+            "ccswitch-gateway.exe",
+        ]
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    {
+        &[
+            "ccswitch-gateway-x86_64-unknown-linux-gnu",
+            "ccswitch-gateway",
+        ]
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    {
+        &[
+            "ccswitch-gateway-aarch64-unknown-linux-gnu",
+            "ccswitch-gateway",
+        ]
+    }
 }
 
 fn ensure_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {

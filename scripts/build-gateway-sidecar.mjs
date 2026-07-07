@@ -6,12 +6,12 @@ import { spawn } from 'node:child_process'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const tauriDir = resolve(root, 'src-tauri')
-const targetTriple = 'aarch64-apple-darwin'
+const targetTriple = await resolveTargetTriple()
 const binaryName = platform() === 'win32' ? 'ccswitch-gateway.exe' : 'ccswitch-gateway'
 const sidecarName = platform() === 'win32'
-  ? 'ccswitch-gateway-aarch64-pc-windows-msvc.exe'
+  ? `ccswitch-gateway-${targetTriple}.exe`
   : `ccswitch-gateway-${targetTriple}`
-const sourceBinary = resolve(tauriDir, 'target', 'release', binaryName)
+const sourceBinary = resolve(tauriDir, 'target', targetTriple, 'release', binaryName)
 const sidecarBinary = resolve(tauriDir, 'binaries', sidecarName)
 
 await mkdir(dirname(sidecarBinary), { recursive: true })
@@ -28,6 +28,8 @@ await run('cargo', [
   '--manifest-path',
   resolve(tauriDir, 'Cargo.toml'),
   '--release',
+  '--target',
+  targetTriple,
   '--bin',
   'ccswitch-gateway',
 ])
@@ -35,6 +37,58 @@ await run('cargo', [
 await copyFile(sourceBinary, sidecarBinary)
 if (platform() !== 'win32') {
   await chmod(sidecarBinary, 0o755)
+}
+
+async function resolveTargetTriple() {
+  if (process.env.TAURI_ENV_TARGET_TRIPLE) {
+    return process.env.TAURI_ENV_TARGET_TRIPLE
+  }
+  if (process.env.CARGO_BUILD_TARGET) {
+    return process.env.CARGO_BUILD_TARGET
+  }
+  if (process.env.npm_config_target) {
+    return process.env.npm_config_target
+  }
+
+  const output = await capture('rustc', ['-vV'])
+  const host = output
+    .split('\n')
+    .find((line) => line.startsWith('host: '))
+    ?.slice('host: '.length)
+    .trim()
+
+  if (!host) {
+    throw new Error('Unable to determine Rust host target triple from rustc -vV')
+  }
+
+  return host
+}
+
+function capture(command, args) {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(command, args, {
+      cwd: root,
+      shell: platform() === 'win32',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk
+    })
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk
+    })
+    child.on('error', reject)
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolvePromise(stdout)
+      } else {
+        reject(new Error(`${command} ${args.join(' ')} failed with exit code ${code}\n${stderr}`))
+      }
+    })
+  })
 }
 
 function run(command, args) {
