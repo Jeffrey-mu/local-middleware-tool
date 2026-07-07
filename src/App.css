@@ -727,6 +727,43 @@
     color: var(--danger-ink);
   }
 
+  .confirm-dialog {
+    @apply gap-3 rounded-lg border p-0;
+    background: var(--surface);
+    border-color: var(--line);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.32);
+  }
+
+  .confirm-dialog [data-slot="dialog-header"] {
+    @apply gap-2 px-4 pt-4;
+  }
+
+  .confirm-dialog [data-slot="dialog-title"] {
+    @apply text-base font-semibold;
+    color: var(--ink);
+  }
+
+  .confirm-dialog [data-slot="dialog-description"] {
+    @apply text-sm leading-6;
+    color: var(--muted);
+  }
+
+  .confirm-dialog-footer {
+    @apply m-0 rounded-b-lg border-t px-4 py-3;
+    background: var(--field-bg);
+    border-color: var(--line);
+  }
+
+  .confirm-danger {
+    background: var(--danger);
+    color: white;
+  }
+
+  .confirm-danger:hover {
+    background: color-mix(in srgb, var(--danger) 86%, black);
+    color: white;
+  }
+
   .provider-card-head {
     @apply justify-between gap-3;
   }

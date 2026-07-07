@@ -31,6 +31,14 @@ import {
 } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Card } from './components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './components/ui/dialog'
 import { ScrollArea } from './components/ui/scroll-area'
 import { Switch } from './components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table'
@@ -160,6 +168,10 @@ type ChatMessage = {
   state?: 'streaming' | 'error'
 }
 
+type ConfirmAction =
+  | { kind: 'add-provider' }
+  | { kind: 'delete-provider'; index: number; provider: Provider }
+
 type ViewId = 'overview' | 'providers' | 'rules' | 'pricing' | 'test' | 'logs' | 'settings'
 type ThemeMode = 'system' | 'dark' | 'light'
 
@@ -196,6 +208,7 @@ function App() {
   const [chatStream, setChatStream] = useState(true)
   const [chatRunning, setChatRunning] = useState(false)
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -503,7 +516,7 @@ function App() {
                   <RefreshCw size={16} />
                   {checking ? '检测中' : '检测'}
                 </Button>
-                <Button type="button" onClick={addProvider}>
+                <Button type="button" onClick={requestAddProvider}>
                   <Plus size={16} />
                   添加
                 </Button>
@@ -520,7 +533,7 @@ function App() {
                     providerStatus={providerStatus}
                     selected={selectedProviderId === provider.id}
                     onSelect={() => setSelectedProviderId(provider.id)}
-                    onDelete={() => removeProvider(index)}
+                    onDelete={() => requestRemoveProvider(index)}
                     onChange={(patch) => updateProvider(index, patch)}
                   />
                 )
@@ -723,6 +736,12 @@ function App() {
             onThemeModeChange={setThemeMode}
           />
         )}
+
+        <ConfirmActionDialog
+          action={confirmAction}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={confirmPendingAction}
+        />
       </section>
     </main>
   )
@@ -743,19 +762,39 @@ function App() {
     setConfig(nextConfig)
   }
 
+  function requestAddProvider() {
+    if (!config) return
+    setConfirmAction({ kind: 'add-provider' })
+  }
+
+  function requestRemoveProvider(index: number) {
+    if (!config) return
+    const provider = config.providers[index]
+    if (!provider) return
+    setConfirmAction({ kind: 'delete-provider', index, provider })
+  }
+
+  function confirmPendingAction() {
+    if (!confirmAction) return
+    if (confirmAction.kind === 'add-provider') {
+      addProvider()
+    } else {
+      removeProvider(confirmAction.index, confirmAction.provider.id)
+    }
+    setConfirmAction(null)
+  }
+
   function addProvider() {
     if (!config) return
-    if (!window.confirm('确认添加一个新的服务商？')) return
     const provider = emptyProvider()
     setSelectedProviderId(provider.id)
     updateConfig({ ...config, providers: [...config.providers, provider] })
   }
 
-  function removeProvider(index: number) {
+  function removeProvider(index: number, providerId: string) {
     if (!config) return
     const provider = config.providers[index]
-    if (!provider) return
-    if (!window.confirm(`确认删除服务商「${provider.name || '未命名 Provider'}」？相关路由规则绑定也会一并移除。`)) return
+    if (!provider || provider.id !== providerId) return
 
     const nextProviders = config.providers.filter((_, providerIndex) => providerIndex !== index)
     const nextSelectedProvider = nextProviders[Math.min(index, nextProviders.length - 1)] ?? null
@@ -1123,6 +1162,44 @@ function ProviderEditor({
         </div>
       )}
     </Card>
+  )
+}
+
+function ConfirmActionDialog({
+  action,
+  onCancel,
+  onConfirm,
+}: {
+  action: ConfirmAction | null
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const isDelete = action?.kind === 'delete-provider'
+  const providerName = isDelete ? action.provider.name || '未命名 Provider' : ''
+
+  return (
+    <Dialog open={Boolean(action)} onOpenChange={(open) => {
+      if (!open) onCancel()
+    }}>
+      <DialogContent className="confirm-dialog" showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>{isDelete ? '删除服务商' : '添加服务商'}</DialogTitle>
+          <DialogDescription>
+            {isDelete
+              ? `确认删除「${providerName}」？相关路由规则绑定也会一并移除。`
+              : '确认添加一个新的服务商？添加后会自动展开配置。'}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="confirm-dialog-footer">
+          <Button variant="secondary" type="button" onClick={onCancel}>
+            取消
+          </Button>
+          <Button className={isDelete ? 'confirm-danger' : undefined} type="button" onClick={onConfirm}>
+            {isDelete ? '删除' : '添加'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
