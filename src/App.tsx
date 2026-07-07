@@ -149,6 +149,8 @@ type ChatMessage = {
 
 type ViewId = 'overview' | 'providers' | 'rules' | 'pricing' | 'test' | 'logs'
 
+const adminBaseUrl = import.meta.env.DEV ? '' : 'http://127.0.0.1:8787'
+
 const emptyProvider = (): Provider => ({
   id: crypto.randomUUID(),
   name: '新的服务商',
@@ -187,7 +189,7 @@ function App() {
   const chatAbortRef = useRef<AbortController | null>(null)
 
   async function refresh(options: { forceConfig?: boolean } = {}) {
-    const response = await fetch('/admin/status')
+    const response = await fetch(adminUrl('/admin/status'))
     const data = (await response.json()) as GatewayStatus
     setStatus(data)
     setPricing(data.pricing)
@@ -212,7 +214,7 @@ function App() {
   async function savePricing() {
     setPricingSaving(true)
     try {
-      const response = await fetch('/admin/pricing', {
+      const response = await fetch(adminUrl('/admin/pricing'), {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -238,7 +240,7 @@ function App() {
       if (configDirtyRef.current) {
         await persistConfig(config)
       }
-      await fetch('/admin/health-check', { method: 'POST' })
+      await fetch(adminUrl('/admin/health-check'), { method: 'POST' })
       await refresh({ forceConfig: true })
     } finally {
       setChecking(false)
@@ -246,7 +248,7 @@ function App() {
   }
 
   async function persistConfig(nextConfig: GatewayConfig) {
-    const response = await fetch('/admin/config', {
+    const response = await fetch(adminUrl('/admin/config'), {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(nextConfig),
@@ -938,6 +940,10 @@ function formatTime(value: string) {
 function barWidth(value: number, total: number) {
   if (!total) return 0
   return Math.max(6, Math.round((value / total) * 100))
+}
+
+function adminUrl(path: string) {
+  return `${adminBaseUrl}${path}`
 }
 
 async function readResponseStream(response: Response, onDelta: (delta: string) => void) {

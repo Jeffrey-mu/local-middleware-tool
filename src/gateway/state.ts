@@ -1,6 +1,7 @@
 import type { ProviderConfig } from './config.ts'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { dataDir } from './paths.ts'
 
 export type ProviderStatus = {
   providerId: string
@@ -44,7 +45,7 @@ export type RequestLog = {
 
 const statuses = new Map<string, ProviderStatus>()
 const requestLogs: RequestLog[] = []
-const usagePath = path.join(process.cwd(), 'data', 'usage.json')
+const usagePath = path.join(dataDir, 'usage.json')
 
 export async function loadRequestLogs() {
   try {

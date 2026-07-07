@@ -1,8 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
+import { dataDir } from './paths.ts'
 
-const pricingPath = path.join(process.cwd(), 'data', 'model-pricing.json')
+const pricingPath = path.join(dataDir, 'model-pricing.json')
 
 export const modelPricingSchema = z.object({
   model: z.string().min(1),

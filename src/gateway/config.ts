@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
+import { dataDir } from './paths.ts'
 
 export const providerSchema = z.object({
   id: z.string(),
@@ -38,7 +39,6 @@ export type GatewayConfig = z.infer<typeof gatewayConfigSchema>
 export type ProviderConfig = z.infer<typeof providerSchema>
 export type RouteRule = z.infer<typeof ruleSchema>
 
-const dataDir = path.join(process.cwd(), 'data')
 const configPath = path.join(dataDir, 'gateway.json')
 
 const defaultConfig: GatewayConfig = {

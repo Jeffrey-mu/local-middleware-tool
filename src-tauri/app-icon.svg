@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="210" x2="840" y1="120" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#18231F"/>
+      <stop offset="1" stop-color="#0D1311"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="256" x2="768" y1="208" y2="816" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3F8F1"/>
+      <stop offset="1" stop-color="#DCEBE1"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="282" x2="762" y1="314" y2="704" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35C977"/>
+      <stop offset="1" stop-color="#1F7B54"/>
+    </linearGradient>
+    <filter id="shadow" width="140%" height="140%" x="-20%" y="-18%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="34" flood-color="#000000" flood-opacity=".28" stdDeviation="44"/>
+    </filter>
+    <filter id="soft" width="150%" height="150%" x="-25%" y="-25%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <circle cx="756" cy="250" r="134" fill="#35C977" opacity=".16" filter="url(#soft)"/>
+  <circle cx="270" cy="772" r="162" fill="#DCEFE5" opacity=".12" filter="url(#soft)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="214" y="190" width="596" height="644" rx="154" fill="url(#panel)"/>
+    <rect x="250" y="226" width="524" height="572" rx="124" fill="none" stroke="#173326" stroke-opacity=".12" stroke-width="10"/>
+  </g>
+
+  <path fill="#17211D" d="M512 278c52 0 103 14 148 39 12 7 20 20 20 34v135c0 139-77 226-168 272-91-46-168-133-168-272V351c0-14 8-27 20-34 45-25 96-39 148-39Z"/>
+  <path fill="url(#accent)" d="M512 326c38 0 76 9 110 27v131c0 99-50 162-110 199-60-37-110-100-110-199V353c34-18 72-27 110-27Z"/>
+
+  <path fill="#F5FBF7" d="M377 493h178c27 0 48-21 48-48s-21-48-48-48h-53c-11 0-20-9-20-20s9-20 20-20h53c49 0 88 39 88 88s-39 88-88 88H377c-11 0-20-9-20-20s9-20 20-20Z"/>
+  <path fill="#F5FBF7" d="M646 531H468c-27 0-48 21-48 48s21 48 48 48h53c11 0 20 9 20 20s-9 20-20 20h-53c-49 0-88-39-88-88s39-88 88-88h178c11 0 20 9 20 20s-9 20-20 20Z"/>
+
+  <circle cx="350" cy="513" r="38" fill="#14211B"/>
+  <circle cx="674" cy="511" r="38" fill="#14211B"/>
+  <circle cx="512" cy="512" r="42" fill="#F5FBF7"/>
+  <circle cx="512" cy="512" r="18" fill="#14211B"/>
+</svg>

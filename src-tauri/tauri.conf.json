@@ -5,19 +5,27 @@
   "identifier": "dev.local.ccswitch",
   "build": {
     "beforeDevCommand": "npm run dev:ui",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run build:gateway && npm run build",
     "devUrl": "http://localhost:8788",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "CCSwitch",
         "width": 1280,
         "height": 820,
-        "minWidth": 980,
+        "minWidth": 1040,
         "minHeight": 680,
+        "center": true,
         "resizable": true,
+        "maximizable": true,
+        "minimizable": true,
+        "closable": true,
+        "decorations": true,
+        "visible": true,
+        "focus": true,
         "fullscreen": false
       }
     ],
@@ -28,6 +36,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "externalBin": [
+      "binaries/ccswitch-gateway"
+    ],
     "icon": [
       "icons/icon.png",
       "icons/icon.icns",

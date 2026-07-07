@@ -7,6 +7,7 @@ import path from 'node:path'
 import { PassThrough } from 'node:stream'
 import { request } from 'undici'
 import { loadConfig, saveConfig, type GatewayConfig } from './config.ts'
+import { dataDir } from './paths.ts'
 import { estimateCostUsd, loadPricingTable, savePricingTable, type PricingTable } from './pricing.ts'
 import { metricsSummary, probeProvider, providerAuthKey, selectProviders, trimProviderBaseUrl } from './router.ts'
 import {
@@ -24,7 +25,7 @@ let config: GatewayConfig = await loadConfig()
 let pricingTable: PricingTable = await loadPricingTable()
 await loadRequestLogs()
 recalculateLoggedCosts()
-const tracePath = path.join(process.cwd(), 'data', 'gateway-trace.jsonl')
+const tracePath = path.join(dataDir, 'gateway-trace.jsonl')
 
 for (const provider of config.providers) {
   ensureProviderStatus(provider)

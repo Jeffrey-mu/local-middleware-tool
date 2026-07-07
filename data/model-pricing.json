@@ -1,0 +1,260 @@
+{
+  "models": [
+    {
+      "model": "gpt-5.5",
+      "inputUsdPerMillion": 5,
+      "cachedInputUsdPerMillion": 0.5,
+      "outputUsdPerMillion": 30,
+      "source": "OpenAI API pricing, Standard short-context text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.5-pro",
+      "inputUsdPerMillion": 30,
+      "cachedInputUsdPerMillion": 0,
+      "outputUsdPerMillion": 180,
+      "source": "OpenAI API pricing, Standard short-context text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.4",
+      "inputUsdPerMillion": 2.5,
+      "cachedInputUsdPerMillion": 0.25,
+      "outputUsdPerMillion": 15,
+      "source": "OpenAI API pricing, Standard short-context text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "inputUsdPerMillion": 0.75,
+      "cachedInputUsdPerMillion": 0.075,
+      "outputUsdPerMillion": 4.5,
+      "source": "OpenAI API pricing, Standard text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.4-nano",
+      "inputUsdPerMillion": 0.2,
+      "cachedInputUsdPerMillion": 0.02,
+      "outputUsdPerMillion": 1.25,
+      "source": "OpenAI API pricing, Standard text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.4-pro",
+      "inputUsdPerMillion": 30,
+      "cachedInputUsdPerMillion": 0,
+      "outputUsdPerMillion": 180,
+      "source": "OpenAI API pricing, Standard short-context text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.3-codex",
+      "inputUsdPerMillion": 1.75,
+      "cachedInputUsdPerMillion": 0.175,
+      "outputUsdPerMillion": 14,
+      "source": "OpenAI API pricing, Specialized models Standard text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "chat-latest",
+      "inputUsdPerMillion": 5,
+      "cachedInputUsdPerMillion": 0.5,
+      "outputUsdPerMillion": 30,
+      "source": "OpenAI API pricing, Specialized ChatGPT Standard text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.2",
+      "inputUsdPerMillion": 1.75,
+      "cachedInputUsdPerMillion": 0.175,
+      "outputUsdPerMillion": 14,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5.2",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.1-codex-max",
+      "inputUsdPerMillion": 1.25,
+      "cachedInputUsdPerMillion": 0.125,
+      "outputUsdPerMillion": 10,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5.1-codex-max",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5.1-codex-mini",
+      "inputUsdPerMillion": 0.25,
+      "cachedInputUsdPerMillion": 0.025,
+      "outputUsdPerMillion": 2,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5.1-codex-mini",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5",
+      "inputUsdPerMillion": 1.25,
+      "cachedInputUsdPerMillion": 0.125,
+      "outputUsdPerMillion": 10,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5-chat-latest",
+      "inputUsdPerMillion": 1.25,
+      "cachedInputUsdPerMillion": 0.125,
+      "outputUsdPerMillion": 10,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5-chat-latest",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5-mini",
+      "inputUsdPerMillion": 0.25,
+      "cachedInputUsdPerMillion": 0.025,
+      "outputUsdPerMillion": 2,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5-mini",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-5-nano",
+      "inputUsdPerMillion": 0.05,
+      "cachedInputUsdPerMillion": 0.005,
+      "outputUsdPerMillion": 0.4,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-5-nano",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4.1",
+      "inputUsdPerMillion": 2,
+      "cachedInputUsdPerMillion": 0.5,
+      "outputUsdPerMillion": 8,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-4.1",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4.1-mini",
+      "inputUsdPerMillion": 0.4,
+      "cachedInputUsdPerMillion": 0.1,
+      "outputUsdPerMillion": 1.6,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4.1-nano",
+      "inputUsdPerMillion": 0.1,
+      "cachedInputUsdPerMillion": 0.025,
+      "outputUsdPerMillion": 0.4,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-4.1-nano",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4o",
+      "inputUsdPerMillion": 2.5,
+      "cachedInputUsdPerMillion": 1.25,
+      "outputUsdPerMillion": 10,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-4o",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4o-mini",
+      "inputUsdPerMillion": 0.15,
+      "cachedInputUsdPerMillion": 0.075,
+      "outputUsdPerMillion": 0.6,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/gpt-4o-mini",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "o3",
+      "inputUsdPerMillion": 2,
+      "cachedInputUsdPerMillion": 0.5,
+      "outputUsdPerMillion": 8,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/o3",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "o3-pro",
+      "inputUsdPerMillion": 20,
+      "cachedInputUsdPerMillion": 0,
+      "outputUsdPerMillion": 80,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/o3-pro",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "o3-mini",
+      "inputUsdPerMillion": 1.1,
+      "cachedInputUsdPerMillion": 0.55,
+      "outputUsdPerMillion": 4.4,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/o3-mini",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "o4-mini",
+      "inputUsdPerMillion": 1.1,
+      "cachedInputUsdPerMillion": 0.275,
+      "outputUsdPerMillion": 4.4,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/o4-mini",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "o3-deep-research",
+      "inputUsdPerMillion": 10,
+      "cachedInputUsdPerMillion": 2.5,
+      "outputUsdPerMillion": 40,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/o3-deep-research",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "o4-mini-deep-research",
+      "inputUsdPerMillion": 2,
+      "cachedInputUsdPerMillion": 0.5,
+      "outputUsdPerMillion": 8,
+      "source": "OpenAI model page, Standard text tokens, https://developers.openai.com/api/docs/models/o4-mini-deep-research",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "computer-use-preview",
+      "inputUsdPerMillion": 1.5,
+      "cachedInputUsdPerMillion": 0,
+      "outputUsdPerMillion": 6,
+      "source": "OpenAI API pricing, Specialized models Batch table lists tool model text tokens, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4o-realtime-preview",
+      "inputUsdPerMillion": 5,
+      "cachedInputUsdPerMillion": 2.5,
+      "outputUsdPerMillion": 20,
+      "source": "OpenAI model page, Realtime text tokens only, https://developers.openai.com/api/docs/models/gpt-4o-realtime-preview",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-realtime-2.1",
+      "inputUsdPerMillion": 4,
+      "cachedInputUsdPerMillion": 0.4,
+      "outputUsdPerMillion": 24,
+      "source": "OpenAI API pricing, Realtime text tokens only, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-realtime-2.1-mini",
+      "inputUsdPerMillion": 0.6,
+      "cachedInputUsdPerMillion": 0.06,
+      "outputUsdPerMillion": 2.4,
+      "source": "OpenAI API pricing, Realtime text tokens only, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4o-transcribe",
+      "inputUsdPerMillion": 2.5,
+      "cachedInputUsdPerMillion": 0,
+      "outputUsdPerMillion": 10,
+      "source": "OpenAI API pricing, Transcription token pricing, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    },
+    {
+      "model": "gpt-4o-mini-transcribe",
+      "inputUsdPerMillion": 1.25,
+      "cachedInputUsdPerMillion": 0,
+      "outputUsdPerMillion": 5,
+      "source": "OpenAI API pricing, Transcription token pricing, https://developers.openai.com/api/docs/pricing",
+      "updatedAt": "2026-07-07T00:00:00.000+08:00"
+    }
+  ]
+}
