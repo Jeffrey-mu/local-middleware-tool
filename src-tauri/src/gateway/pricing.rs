@@ -38,16 +38,14 @@ pub async fn load_pricing_table() -> Result<PricingTable> {
     tokio::fs::create_dir_all(path.parent().expect("pricing path has parent")).await?;
 
     match tokio::fs::read_to_string(&path).await {
-        Ok(raw) => Ok(serde_json::from_str(&raw)?),
-        Err(_) => {
-            if let Some(seed_path) = seed_pricing_path() {
-                if let Ok(raw) = tokio::fs::read_to_string(seed_path).await {
-                    let table = serde_json::from_str::<PricingTable>(&raw)?;
-                    return save_pricing_table(table).await;
-                }
+        Ok(raw) => {
+            let table = serde_json::from_str::<PricingTable>(&raw)?;
+            if table.models.is_empty() {
+                return restore_seed_pricing_table().await;
             }
-            save_pricing_table(PricingTable::default()).await
+            Ok(table)
         }
+        Err(_) => restore_seed_pricing_table().await,
     }
 }
 
@@ -110,6 +108,19 @@ fn pricing_path() -> PathBuf {
     data_dir().join("model-pricing.json")
 }
 
+async fn restore_seed_pricing_table() -> Result<PricingTable> {
+    if let Some(seed_path) = seed_pricing_path() {
+        if let Ok(raw) = tokio::fs::read_to_string(seed_path).await {
+            let table = serde_json::from_str::<PricingTable>(&raw)?;
+            if !table.models.is_empty() {
+                return save_pricing_table(table).await;
+            }
+        }
+    }
+
+    save_pricing_table(PricingTable::default()).await
+}
+
 fn seed_pricing_path() -> Option<PathBuf> {
     let mut candidates = Vec::new();
 
@@ -137,4 +148,46 @@ fn per_token(usd_per_million: f64) -> f64 {
 
 fn default_source() -> String {
     "manual".into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[tokio::test]
+    async fn restores_seed_when_existing_pricing_table_is_empty() {
+        let test_dir = std::env::temp_dir().join(format!("ccswitch-pricing-{}", nanoid::nanoid!()));
+        tokio::fs::create_dir_all(&test_dir).await.unwrap();
+        tokio::fs::write(test_dir.join("model-pricing.json"), r#"{"models":[]}"#)
+            .await
+            .unwrap();
+
+        let seed_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("data/model-pricing.json");
+        let previous_data_dir = std::env::var("CCSWITCH_DATA_DIR").ok();
+        let previous_seed = std::env::var("CCSWITCH_PRICING_SEED").ok();
+
+        std::env::set_var("CCSWITCH_DATA_DIR", &test_dir);
+        std::env::set_var("CCSWITCH_PRICING_SEED", seed_path);
+
+        let table = load_pricing_table().await.unwrap();
+
+        if let Some(value) = previous_data_dir {
+            std::env::set_var("CCSWITCH_DATA_DIR", value);
+        } else {
+            std::env::remove_var("CCSWITCH_DATA_DIR");
+        }
+        if let Some(value) = previous_seed {
+            std::env::set_var("CCSWITCH_PRICING_SEED", value);
+        } else {
+            std::env::remove_var("CCSWITCH_PRICING_SEED");
+        }
+        let _ = tokio::fs::remove_dir_all(&test_dir).await;
+
+        assert!(!table.models.is_empty());
+        assert!(table.models.iter().any(|item| item.model == "gpt-5.5"));
+    }
 }

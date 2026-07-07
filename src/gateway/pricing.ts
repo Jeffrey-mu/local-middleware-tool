@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { dataDir } from './paths.ts'
 
 const pricingPath = path.join(dataDir, 'model-pricing.json')
+const seedPricingPath = path.join(process.cwd(), 'data', 'model-pricing.json')
 
 export const modelPricingSchema = z.object({
   model: z.string().min(1),
@@ -28,10 +29,13 @@ const defaultPricingTable: PricingTable = {
 export async function loadPricingTable() {
   try {
     const raw = await readFile(pricingPath, 'utf8')
-    return pricingTableSchema.parse(JSON.parse(raw))
+    const table = pricingTableSchema.parse(JSON.parse(raw))
+    if (!table.models.length) {
+      return restoreSeedPricingTable()
+    }
+    return table
   } catch {
-    await savePricingTable(defaultPricingTable)
-    return defaultPricingTable
+    return restoreSeedPricingTable()
   }
 }
 
@@ -73,4 +77,19 @@ export function findModelPricing(table: PricingTable, model: string) {
 
 function perToken(usdPerMillion: number) {
   return usdPerMillion / 1_000_000
+}
+
+async function restoreSeedPricingTable() {
+  try {
+    const raw = await readFile(seedPricingPath, 'utf8')
+    const table = pricingTableSchema.parse(JSON.parse(raw))
+    if (table.models.length) {
+      return savePricingTable(table)
+    }
+  } catch {
+    // Fall through to the empty table only when no bundled seed is available.
+  }
+
+  await savePricingTable(defaultPricingTable)
+  return defaultPricingTable
 }
