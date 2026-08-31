@@ -9,7 +9,6 @@ import {
   Route,
   Server,
   Settings,
-  ShieldCheck,
   TerminalSquare,
 } from 'lucide-react'
 import { ConfirmActionDialog } from './components/dashboard/ConfirmActionDialog'
@@ -218,7 +217,7 @@ function App() {
       <aside className="sidebar">
         <div className="brand-block">
           <div className="brand-mark">
-            <ShieldCheck size={22} />
+            <img className="brand-mark-img" src="/favicon.png" alt="AIGate" />
           </div>
           <strong>AIGate</strong>
         </div>
@@ -271,6 +270,10 @@ function App() {
           <div>
             <p className="eyebrow">Local OpenAI Compatible Gateway</p>
             <h2>{viewTitle(activeView)}</h2>
+          </div>
+          <div className="header-status">
+            <span className="live-dot" />
+            本地网关在线
           </div>
         </header>
 

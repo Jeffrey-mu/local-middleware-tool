@@ -15,7 +15,7 @@ export function PanelTitle({ eyebrow, title, icon }: { eyebrow: string; title: s
 export function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <article className="metric">
-      <div>{icon}</div>
+      <div className="metric-icon">{icon}</div>
       <span>{label}</span>
       <strong>{value}</strong>
     </article>

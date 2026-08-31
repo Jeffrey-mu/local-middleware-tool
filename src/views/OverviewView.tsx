@@ -25,7 +25,7 @@ export function OverviewView({ status, config, endpoint, analytics, successRate,
 <section className="view-stack">
             <div className="control-hero">
               <div className="control-copy">
-                <span className="status-pill"><span className="live-dot" /> Middleware Running</span>
+                <span className="status-pill"><span className="live-dot" /> 网关运行中</span>
                 <h3>{enabledProviders ? '本地 AI 流量正在被接管' : '启用一个 Provider 后开始接管流量'}</h3>
                 <p>{endpoint} · {strategyLabel(config.strategy)} · {status.metrics.onlineProviders} 个在线 Provider</p>
               </div>
