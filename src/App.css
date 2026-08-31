@@ -3,47 +3,47 @@
 
 @layer base {
   :root {
-    --bg: #1f1f24;
-    --shell: #242429;
-    --surface: #29292e;
-    --surface-2: #2f2f34;
-    --surface-3: #36363c;
-    --ink: #fafafa;
-    --muted: #a1a1aa;
-    --nav-ink: #a1a1aa;
-    --line: rgba(255, 255, 255, 0.09);
-    --sidebar-bg: #1f1f24;
-    --field-bg: #232328;
+    --bg: #010102;
+    --shell: #0b0c0d;
+    --surface: #0f1011;
+    --surface-2: #141516;
+    --surface-3: #18191a;
+    --ink: #f7f8f8;
+    --muted: #8a8f98;
+    --nav-ink: #a3a6ad;
+    --line: #23252a;
+    --sidebar-bg: #08080a;
+    --field-bg: #0c0d0f;
     --button-bg: var(--bg);
-    --button-hover: #2f2f34;
+    --button-hover: #1d1e20;
     --button-ink: var(--ink);
-    --active-bg: var(--bg);
+    --active-bg: #141516;
     --active-ink: var(--ink);
-    --soft-fill: rgba(255, 255, 255, 0.045);
-    --soft-fill-strong: rgba(255, 255, 255, 0.075);
-    --table-line: rgba(255, 255, 255, 0.09);
-    --shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
-    --line-strong: rgba(255, 255, 255, 0.14);
-    --accent: #0a84ff;
-    --accent-ink: #409cff;
-    --accent-soft: rgba(64, 156, 255, 0.12);
-    --accent-wash: rgba(64, 156, 255, 0.1);
+    --soft-fill: rgba(255, 255, 255, 0.035);
+    --soft-fill-strong: rgba(255, 255, 255, 0.065);
+    --table-line: #1f2126;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+    --line-strong: #34343a;
+    --accent: #5e6ad2;
+    --accent-ink: #a3b3ff;
+    --accent-soft: rgba(94, 106, 210, 0.14);
+    --accent-wash: rgba(94, 106, 210, 0.1);
     --duration: 180ms;
     --easing: cubic-bezier(0.22, 1, 0.36, 1);
-    --warning: #f59e0b;
-    --warning-ink: #fcd34d;
-    --danger: #ef4444;
-    --danger-ink: #fca5a5;
-    --info: #38bdf8;
-    --info-ink: #7dd3fc;
-    --radius: 8px;
+    --warning: #d97706;
+    --warning-ink: #fbbf24;
+    --danger: #e5484d;
+    --danger-ink: #ffa1a1;
+    --info: #7aa2f7;
+    --info-ink: #b3c5ff;
+    --radius: 6px;
     --background: var(--bg);
     --foreground: var(--ink);
     --card: var(--surface);
     --card-foreground: var(--ink);
     --popover: var(--surface);
     --popover-foreground: var(--ink);
-    --primary: #0a84ff;
+    --primary: #5e6ad2;
     --primary-foreground: #ffffff;
     --secondary: var(--surface-2);
     --secondary-foreground: var(--ink);
@@ -66,35 +66,35 @@
 
   :root[data-theme="light"] {
     --bg: #ffffff;
-    --shell: #f4f4f5;
+    --shell: #f6f6f7;
     --surface: #ffffff;
     --surface-2: #f4f4f5;
-    --surface-3: #e4e4e7;
-    --ink: #18181b;
-    --muted: #71717a;
-    --nav-ink: #636366;
-    --line: rgba(24, 24, 27, 0.12);
-    --sidebar-bg: #ffffff;
+    --surface-3: #ebebec;
+    --ink: #171717;
+    --muted: #686a6f;
+    --nav-ink: #6b6d73;
+    --line: #e8e8ea;
+    --sidebar-bg: #fbfbfc;
     --field-bg: #ffffff;
     --button-bg: #ffffff;
     --button-hover: #f4f4f5;
-    --button-ink: #18181b;
+    --button-ink: #171717;
     --active-bg: #ffffff;
-    --active-ink: #18181b;
-    --soft-fill: rgba(24, 24, 27, 0.045);
-    --soft-fill-strong: rgba(24, 24, 27, 0.075);
-    --table-line: rgba(24, 24, 27, 0.09);
-    --shadow: 0 14px 34px rgba(24, 24, 27, 0.09);
-    --line-strong: rgba(24, 24, 27, 0.16);
-    --accent: #0060df;
-    --accent-ink: #0060df;
-    --accent-soft: rgba(0, 96, 223, 0.13);
-    --accent-wash: rgba(0, 96, 223, 0.09);
-    --primary: #0060df;
+    --active-ink: #171717;
+    --soft-fill: rgba(24, 24, 27, 0.035);
+    --soft-fill-strong: rgba(24, 24, 27, 0.07);
+    --table-line: #e8e8ea;
+    --shadow: 0 14px 34px rgba(24, 24, 27, 0.08);
+    --line-strong: #cfcfd4;
+    --accent: #4450c8;
+    --accent-ink: #4450c8;
+    --accent-soft: rgba(68, 80, 200, 0.12);
+    --accent-wash: rgba(68, 80, 200, 0.08);
+    --primary: #4450c8;
     --primary-foreground: #ffffff;
     --warning-ink: #b45309;
-    --danger-ink: #b91c1c;
-    --info-ink: #0369a1;
+    --danger-ink: #b3261e;
+    --info-ink: #4b6ee8;
   }
 
   * {
@@ -154,25 +154,23 @@
   }
 
   .product-shell {
-    @apply grid h-screen min-h-screen grid-cols-[216px_minmax(0,1fr)] overflow-hidden;
+    @apply grid h-screen min-h-screen grid-cols-[230px_minmax(0,1fr)] overflow-hidden;
     background: var(--bg);
     color: var(--ink);
   }
 
   .sidebar {
-    @apply grid h-screen min-w-0 grid-rows-[auto_auto_1fr_auto] overflow-hidden p-2.5;
+    @apply grid h-screen min-w-0 grid-rows-[auto_auto_1fr_auto] overflow-hidden p-3;
     background: var(--sidebar-bg);
-    border-right: 1px solid var(--line);
   }
 
   .brand-block {
-    @apply grid grid-cols-[34px_1fr] items-center gap-2.5 rounded-lg px-2 py-2;
+    @apply grid grid-cols-[34px_1fr] items-center gap-2.5 rounded-md px-1 py-2;
   }
 
   .brand-mark {
-    @apply inline-flex size-8 items-center justify-center rounded-lg border;
+    @apply inline-flex size-8 items-center justify-center rounded-md;
     background: var(--active-bg);
-    border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
     color: var(--accent-ink);
   }
 
@@ -209,9 +207,8 @@
   }
 
   .runtime-card {
-    @apply mt-1.5 grid gap-2 rounded-lg border p-2.5;
+    @apply mt-1.5 grid gap-2 rounded-md p-2.5;
     background: color-mix(in srgb, var(--accent-wash) 16%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
   }
 
   .runtime-topline,
@@ -253,13 +250,12 @@
     @apply min-h-9 w-full justify-between gap-2 rounded-md px-2.5;
     background: var(--field-bg);
     color: var(--nav-ink);
-    box-shadow: inset 0 0 0 1px var(--line);
     transition: color var(--duration) var(--easing), box-shadow var(--duration) var(--easing), background var(--duration) var(--easing);
   }
 
   .endpoint-copy:hover {
     color: var(--ink);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 48%, var(--line));
+    box-shadow: none;
   }
 
   .endpoint-copy span {
@@ -267,20 +263,20 @@
   }
 
   .nav-list {
-    @apply mt-3 grid w-full min-w-0 content-start gap-1 overflow-hidden pb-3;
+    @apply mt-4 grid w-full min-w-0 content-start gap-1 overflow-hidden pb-3;
   }
 
   .nav-item {
-    @apply relative grid min-h-10 w-full max-w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center justify-items-start gap-2 rounded-lg border border-transparent bg-transparent px-2.5 py-1.5 text-left transition duration-150;
+    @apply relative grid min-h-9 w-full max-w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center justify-items-start gap-2 rounded-md bg-transparent px-2.5 py-1.5 text-left transition duration-150;
     color: var(--nav-ink);
     min-width: 0;
     transition: background var(--duration) var(--easing), color var(--duration) var(--easing), border-color var(--duration) var(--easing), transform var(--duration) var(--easing);
   }
 
   .nav-item:hover {
-    transform: translateX(2px);
-    background: var(--soft-fill-strong);
+    background: var(--surface);
     color: var(--ink);
+    border-color: var(--line);
   }
 
   .nav-item:active,
@@ -293,17 +289,9 @@
   }
 
   .nav-item.active {
-    background: color-mix(in srgb, var(--accent-wash) 34%, var(--surface));
+    background: color-mix(in srgb, var(--accent-wash) 26%, var(--surface));
     color: var(--ink);
-    border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
-  }
-
-  .nav-item.active::before {
-    @apply absolute left-0 top-1/2 size-[3px] rounded-full;
-    content: "";
-    background: var(--accent);
-    transform: translateY(-50%);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 54%, transparent);
+    border-color: var(--line);
   }
 
   .nav-item strong {
@@ -323,8 +311,7 @@
   }
 
   .sidebar-footer {
-    @apply grid grid-cols-[32px_1fr] items-center gap-2 border-t px-1 pt-2 text-left;
-    border-color: var(--line);
+    @apply grid grid-cols-[32px_1fr] items-center gap-2 px-1 pt-2 text-left;
   }
 
   .sync-label {
@@ -333,9 +320,8 @@
   }
 
   .rail-settings {
-    @apply inline-grid size-8 place-items-center rounded-md border p-0;
+    @apply inline-grid size-8 place-items-center rounded-md p-0;
     background: transparent;
-    border-color: var(--line);
     color: var(--nav-ink);
   }
 
@@ -354,8 +340,7 @@
   }
 
   .workspace-header {
-    @apply grid grid-cols-[1fr_auto] items-center gap-3 border-b px-4 py-3;
-    border-color: var(--line);
+    @apply grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3;
     background: color-mix(in srgb, var(--shell) 82%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -367,10 +352,9 @@
   }
 
   .header-status {
-    @apply inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-semibold;
+    @apply inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold;
     color: var(--muted);
     background: color-mix(in srgb, var(--accent-wash) 22%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
   }
 
   .toolbar,
@@ -415,8 +399,8 @@
   select:focus,
   textarea:focus,
   button:focus-visible {
-    border-color: color-mix(in srgb, var(--accent) 65%, transparent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    border-color: var(--line-strong);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--muted) 26%, transparent);
   }
 
   textarea {
@@ -431,20 +415,20 @@
   }
 
   .view-stack {
-    @apply h-full overflow-y-auto p-4;
+    @apply h-full overflow-y-auto p-4 lg:p-5;
   }
 
   .control-hero,
   .metric {
-    @apply rounded-xl border;
+    @apply rounded-lg;
     background: var(--surface);
-    border-color: var(--line);
     box-shadow: inset 0 1px 0 var(--soft-fill-strong);
   }
 
   .control-hero {
-    @apply grid min-h-24 grid-cols-[1fr_auto] items-center gap-3 overflow-hidden p-4;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent-wash) 34%, var(--surface)), var(--surface) 46%);
+    @apply relative grid min-h-[120px] grid-cols-[1fr_auto] items-center gap-3 overflow-visible p-4 lg:p-5;
+    background: var(--surface);
+    box-shadow: inset 0 1px 0 var(--soft-fill-strong);
   }
 
   .control-copy {
@@ -452,9 +436,8 @@
   }
 
   .status-pill {
-    @apply w-fit gap-2 rounded-lg border px-2.5 py-1 text-[11px] font-bold;
+    @apply w-fit gap-2 rounded-lg px-2.5 py-1 text-[11px] font-bold;
     background: color-mix(in srgb, var(--accent-soft) 44%, transparent);
-    border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
     color: var(--accent-ink);
   }
 
@@ -469,18 +452,17 @@
   }
 
   .metrics-grid {
-    @apply grid grid-cols-6 gap-2.5;
+    @apply grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6;
   }
 
   .metric {
-    @apply min-h-[92px] p-3;
+    @apply min-h-[86px] p-3;
     background: color-mix(in srgb, var(--field-bg) 88%, var(--surface));
   }
 
   .metric-icon {
-    @apply grid size-8 place-items-center rounded-lg border;
+    @apply grid size-8 place-items-center rounded-md;
     background: var(--accent-soft);
-    border-color: color-mix(in srgb, var(--accent) 26%, var(--line));
     color: var(--accent);
   }
 
@@ -499,25 +481,23 @@
   }
 
   .command-grid {
-    @apply grid grid-cols-[1.15fr_0.85fr] gap-2.5;
+    @apply grid grid-cols-1 gap-2.5 xl:grid-cols-[1.15fr_0.85fr];
   }
 
   .dashboard-grid,
   .settings-grid {
-    @apply grid grid-cols-2 gap-2.5;
+    @apply grid grid-cols-1 gap-2.5 lg:grid-cols-2;
   }
 
   .panel {
-    @apply min-w-0 border p-4;
+    @apply min-w-0 p-4;
     background: var(--surface);
-    border-color: var(--line);
     box-shadow: inset 0 1px 0 var(--soft-fill-strong);
-    border-radius: 12px;
+    border-radius: 10px;
   }
 
   .panel-title {
-    @apply mb-4 justify-between gap-4 border-b pb-3;
-    border-color: var(--line-strong);
+    @apply mb-4 justify-between gap-4 pb-3;
     position: relative;
   }
 
@@ -539,19 +519,13 @@
   }
 
   .route-flow {
-    @apply grid grid-cols-1 gap-0 overflow-hidden rounded-md border;
-    border-color: var(--line);
+    @apply grid grid-cols-1 gap-0 overflow-hidden rounded-md;
   }
 
   .route-node {
-    @apply grid min-h-[54px] grid-cols-[22px_120px_minmax(0,1fr)_auto] items-center gap-2 rounded-none border-0 border-b px-3 py-2;
+    @apply grid min-h-[54px] grid-cols-[22px_120px_minmax(0,1fr)_auto] items-center gap-2 rounded-none px-3 py-2;
     background: var(--field-bg);
-    border-color: var(--line);
     box-shadow: none;
-  }
-
-  .route-node:last-child {
-    border-bottom: 0;
   }
 
   .route-node svg {
@@ -598,9 +572,8 @@
   }
 
   .event-item {
-    @apply grid min-h-10 grid-cols-[76px_1fr_auto] items-center gap-2 rounded-md border px-2.5;
+    @apply grid min-h-10 grid-cols-[76px_1fr_auto] items-center gap-2 rounded-md px-2.5;
     background: var(--soft-fill);
-    border-color: var(--line);
     box-shadow: none;
   }
 
@@ -631,6 +604,7 @@
   .provider-stats,
   .model-table {
     @apply grid gap-2.5;
+    min-width: 0;
   }
 
   .stat-row {
@@ -671,8 +645,8 @@
   }
 
   .mini-row {
-    @apply min-h-9 border-t;
-    border-color: var(--line);
+    @apply min-h-9 rounded-md;
+    background: color-mix(in srgb, var(--surface) 72%, var(--field-bg));
   }
 
   .provider-panel {
@@ -683,37 +657,38 @@
     @apply grid grid-cols-1 gap-2.5;
   }
 
+  @media (min-width: 1500px) {
+    .provider-card-grid {
+      @apply grid-cols-2;
+    }
+  }
+
   .provider-card {
-    @apply grid gap-0 rounded-xl border p-0;
+    @apply grid gap-0 rounded-lg p-0;
     background: color-mix(in srgb, var(--field-bg) 86%, var(--surface));
-    border-color: var(--line);
     box-shadow: none;
     transition: border-color var(--duration) var(--easing), background var(--duration) var(--easing), box-shadow var(--duration) var(--easing);
   }
 
   .provider-card:hover {
-    border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+    box-shadow: none;
   }
 
   .provider-card.enabled {
     background: color-mix(in srgb, var(--accent-wash) 12%, var(--field-bg));
-    border-color: color-mix(in srgb, var(--accent) 26%, var(--line));
   }
 
   .provider-card.selected {
     background: color-mix(in srgb, var(--accent-wash) 30%, var(--field-bg));
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent);
   }
 
   .provider-card-summary {
-    @apply grid min-h-[84px] w-full grid-cols-[18px_36px_minmax(0,1fr)_minmax(260px,0.6fr)_auto] items-center gap-3 rounded-xl border-0 bg-transparent px-4 py-3 text-left;
+    @apply grid min-h-[76px] w-full grid-cols-[18px_36px_minmax(0,1fr)_minmax(220px,0.6fr)_auto] items-center gap-3 rounded-lg border-0 bg-transparent px-4 py-3 text-left;
     color: var(--ink);
   }
 
   .provider-card-summary:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--line-strong);
     outline-offset: 2px;
   }
 
@@ -728,15 +703,13 @@
   }
 
   .provider-avatar {
-    @apply grid size-9 place-items-center rounded-lg border text-xs font-bold tracking-normal;
+    @apply grid size-8 min-w-8 place-items-center rounded-md text-xs font-bold tracking-normal;
     background: var(--soft-fill);
-    border-color: var(--line);
     color: var(--muted);
   }
 
   .provider-card.selected .provider-avatar {
     background: color-mix(in srgb, var(--accent) 16%, var(--soft-fill));
-    border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
     color: var(--ink);
   }
 
@@ -745,7 +718,7 @@
   }
 
   .provider-identity strong {
-    @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold;
+    @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium;
   }
 
   .provider-identity small {
@@ -754,7 +727,7 @@
   }
 
   .provider-row-meta {
-    @apply grid grid-cols-3 items-center gap-3 text-xs;
+    @apply grid grid-cols-3 items-center gap-3 text-[11px];
     color: var(--muted);
   }
 
@@ -763,7 +736,7 @@
   }
 
   .provider-row-meta b {
-    @apply text-sm font-semibold;
+    @apply text-sm font-medium;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
   }
@@ -780,8 +753,7 @@
   }
 
   .provider-expanded {
-    @apply grid gap-3 border-t px-4 py-3;
-    border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+    @apply grid gap-3 px-4 py-3;
   }
 
   .provider-actions {
@@ -852,9 +824,8 @@
   }
 
   .provider-health-grid span {
-    @apply grid gap-1 rounded-md border p-2 text-[11px];
+    @apply grid gap-1 rounded-md p-2 text-[11px];
     background: var(--soft-fill);
-    border-color: var(--line);
     color: var(--muted);
   }
 
@@ -868,6 +839,20 @@
   .provider-main,
   .field {
     @apply grid gap-2;
+  }
+
+  .provider-section-label {
+    @apply pt-2 text-[11px] font-extrabold;
+    color: var(--muted);
+  }
+
+  .provider-section-label:first-child {
+    padding-top: 0;
+  }
+
+  .provider-section-label:not(:first-child) {
+    margin-top: 4px;
+    padding-top: 8px;
   }
 
   .provider-tunables {
@@ -915,9 +900,8 @@
   }
 
   .rule-row {
-    @apply grid min-h-10 grid-cols-[10px_160px_1fr] items-center gap-2 rounded-md border px-2.5;
+    @apply grid min-h-10 grid-cols-[10px_160px_1fr] items-center gap-2 rounded-md px-2.5;
     background: var(--soft-fill);
-    border-color: var(--line);
     box-shadow: none;
   }
 
@@ -977,9 +961,8 @@
   }
 
   .chat-message p {
-    @apply m-0 min-h-8 whitespace-pre-wrap break-words rounded-md border px-2.5 py-1.5 text-sm leading-6;
+    @apply m-0 min-h-8 whitespace-pre-wrap break-words rounded-md px-2.5 py-1.5 text-sm leading-6;
     background: var(--surface-2);
-    border-color: var(--line);
     box-shadow: none;
   }
 
@@ -1008,7 +991,8 @@
   }
 
   .chat-composer {
-    @apply mt-3 grid grid-cols-[1fr_auto] items-end gap-2.5;
+    @apply mt-3 grid grid-cols-[1fr_auto] items-end gap-2.5 rounded-lg p-2;
+    background: color-mix(in srgb, var(--surface) 88%, var(--field-bg));
   }
 
   .chat-composer button {
@@ -1035,9 +1019,8 @@
   }
 
   .pricing-row {
-    @apply rounded-md border p-2;
+    @apply rounded-md p-2;
     background: var(--soft-fill);
-    border-color: var(--line);
     box-shadow: none;
   }
 
@@ -1082,6 +1065,58 @@
   .usage-row {
     @apply min-h-[58px] border-b;
     border-color: var(--table-line);
+  }
+
+  [data-slot="table-container"] {
+    @apply h-full min-h-0 min-w-0;
+  }
+
+  [data-slot="table"] {
+    min-width: 1280px;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  [data-slot="table-head"] {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  [data-slot="table-head"] th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  [data-slot="table-head"] + [data-slot="table-body"] {
+    @apply align-top;
+  }
+
+  [data-slot="table-row"] {
+    transition: background var(--duration) var(--easing);
+  }
+
+  [data-slot="table-row"]:hover {
+    background: color-mix(in srgb, var(--accent-wash) 8%, var(--field-bg));
+  }
+
+  [data-slot="table-cell"] strong,
+  [data-slot="table-cell"] b,
+  [data-slot="table-cell"] time {
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-slot="table-cell"] em {
+    @apply rounded-md px-2 py-1 text-xs not-italic;
+    background: rgba(88, 166, 255, 0.14);
+    color: var(--info-ink);
   }
 
   .usage-row strong,
@@ -1132,9 +1167,8 @@
   }
 
   .settings-back {
-    @apply inline-grid size-9 place-items-center rounded-full border p-0;
+    @apply inline-grid size-9 place-items-center rounded-full p-0;
     background: transparent;
-    border-color: var(--line);
     color: var(--ink);
   }
 
@@ -1193,9 +1227,8 @@
   }
 
   .settings-dialog-icon {
-    @apply inline-grid size-8 place-items-center rounded-md border;
+    @apply inline-grid size-8 place-items-center rounded-md;
     background: var(--soft-fill);
-    border-color: var(--line);
     color: var(--accent-ink);
   }
 
@@ -1238,9 +1271,8 @@
   }
 
   .theme-toggle {
-    @apply shrink-0 rounded-md border p-0.5;
+    @apply shrink-0 rounded-md p-0.5;
     background: var(--soft-fill);
-    border-color: var(--line);
   }
 
   .theme-toggle [data-slot="toggle-group-item"] {
@@ -1251,6 +1283,211 @@
     background: var(--active-bg);
     color: var(--active-ink);
     box-shadow: none;
+  }
+
+  .view-stack > * {
+    animation: riseIn 340ms var(--easing) both;
+  }
+
+  .view-stack > :nth-child(2) {
+    animation-delay: 48ms;
+  }
+
+  .view-stack > :nth-child(3) {
+    animation-delay: 76ms;
+  }
+
+  .view-stack > :nth-child(4) {
+    animation-delay: 104ms;
+  }
+
+  .metric {
+    animation: riseIn 300ms var(--easing) both;
+  }
+
+  .metric:nth-child(2) {
+    animation-delay: 36ms;
+  }
+
+  .metric:nth-child(3) {
+    animation-delay: 60ms;
+  }
+
+  .metric:nth-child(4) {
+    animation-delay: 84ms;
+  }
+
+  .metric:nth-child(5) {
+    animation-delay: 108ms;
+  }
+
+  .metric:nth-child(6) {
+    animation-delay: 132ms;
+  }
+
+  .command-grid > *,
+  .dashboard-grid > * {
+    animation: panelIn 320ms var(--easing) both;
+  }
+
+  .command-grid > :last-child,
+  .dashboard-grid > :last-child {
+    animation-delay: 40ms;
+  }
+
+  .route-flow-panel,
+  .event-panel,
+  .chart-panel,
+  .provider-card,
+  .rule-row,
+  .event-item,
+  .pricing-row,
+  .chat-message {
+    animation: rowIn 260ms var(--easing) both;
+  }
+
+  .metric,
+  .control-hero,
+  .panel,
+  .provider-card,
+  .rule-row,
+  .pricing-row,
+  .usage-row,
+  .settings-section {
+    transition:
+      background var(--duration) var(--easing),
+      border-color var(--duration) var(--easing),
+      box-shadow var(--duration) var(--easing),
+      transform var(--duration) var(--easing);
+  }
+
+  .metric:hover,
+  .control-hero:hover {
+    background: color-mix(in srgb, var(--surface-2) 94%, var(--surface));
+  }
+
+  .metric:hover {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 var(--soft-fill-strong), 0 10px 24px rgba(0, 0, 0, 0.16);
+  }
+
+  .panel:hover {
+    border-color: color-mix(in srgb, var(--line-strong) 88%, var(--line));
+  }
+
+  .route-node {
+    transition: background var(--duration) var(--easing), border-color var(--duration) var(--easing), color var(--duration) var(--easing);
+  }
+
+  .route-node:hover {
+    background: color-mix(in srgb, var(--accent-wash) 26%, var(--field-bg));
+  }
+
+  .route-node.provider:hover {
+    background: color-mix(in srgb, var(--accent-wash) 50%, var(--field-bg));
+  }
+
+  .provider-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  }
+
+  .provider-card.selected:hover {
+    transform: none;
+  }
+
+  .provider-expanded {
+    animation: expandDrop 220ms var(--easing) both;
+  }
+
+  .rule-row:hover,
+  .event-item:hover,
+  .pricing-row:hover {
+    background: color-mix(in srgb, var(--surface-2) 94%, var(--field-bg));
+  }
+
+  .rule-row {
+    grid-template-columns: 10px 180px minmax(0, 1fr);
+  }
+
+  .rule-row small {
+    font-family: ui-monospace, SF Mono, Menlo, monospace;
+    font-size: 11px;
+  }
+
+  .pricing-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .pricing-row:focus-within,
+  .usage-row:hover {
+    background: color-mix(in srgb, var(--accent-wash) 8%, var(--field-bg));
+  }
+
+  .usage-row {
+    transition: background var(--duration) var(--easing);
+  }
+
+  .chat-window {
+    scroll-behavior: smooth;
+  }
+
+  .chat-message {
+    animation-delay: 0ms;
+  }
+
+  .chat-message.user p {
+    background: color-mix(in srgb, var(--accent) 13%, var(--surface-2));
+    border-color: var(--line);
+  }
+
+  .chat-composer {
+    transition: background var(--duration) var(--easing), border-color var(--duration) var(--easing), box-shadow var(--duration) var(--easing);
+  }
+
+  .chat-composer:focus-within {
+    background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--muted) 20%, transparent);
+  }
+
+  .settings-tabs button.active {
+    box-shadow: inset 0 1px 0 var(--soft-fill-strong), 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .settings-section {
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 94%, var(--field-bg));
+    padding: 16px;
+  }
+
+  .settings-section:hover {
+    background: color-mix(in srgb, var(--surface-2) 86%, var(--surface));
+  }
+
+  .settings-back {
+    transform: rotate(180deg);
+    transition: background var(--duration) var(--easing), border-color var(--duration) var(--easing), transform 240ms var(--easing);
+  }
+
+  .settings-back:hover {
+    background: var(--surface-2);
+    border-color: var(--line-strong);
+    transform: rotate(180deg) translateX(2px);
+  }
+
+  .live-dot {
+    animation: livePulse 2.2s ease-out infinite;
+  }
+
+  .boot-card,
+  .confirm-dialog,
+  .settings-dialog {
+    animation: riseIn 260ms var(--easing) both;
   }
 }
 
@@ -1263,6 +1500,68 @@
   46%,
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes livePulse {
+  0% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  70% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent);
   }
 }
 
@@ -1392,8 +1691,20 @@
     @apply grid-cols-[18px_36px_minmax(0,1fr)_auto];
   }
 
+  .provider-card-summary {
+    grid-template-columns: 18px 36px minmax(0, 1fr) max-content;
+  }
+
   .provider-row-meta {
-    @apply col-span-4 col-start-1 grid-cols-3 pl-[64px];
+    @apply grid-cols-3 pl-[64px];
+    grid-column: 1 / 4;
+    grid-row: 2;
+  }
+
+  .provider-state {
+    @apply w-fit justify-self-end;
+    grid-column: 4;
+    grid-row: 2;
   }
 
   .route-flow {
@@ -1478,6 +1789,17 @@
 
   .provider-card-summary {
     @apply grid-cols-[18px_36px_minmax(0,1fr)] px-3;
+  }
+
+  .stat-row {
+    grid-template-columns: minmax(0, 1fr) minmax(82px, 0.55fr) 58px 58px;
+    gap: 8px;
+  }
+
+  .mini-head,
+  .mini-row {
+    grid-template-columns: minmax(0, 1fr) 54px 68px 60px;
+    gap: 8px;
   }
 
   .provider-state {

@@ -66,6 +66,7 @@ export function ProviderEditor({
             </div>
           </div>
           <div className="provider-fields">
+            <div className="provider-section-label">连接信息</div>
             <label className="field">
               名称
               <input value={provider.name} onChange={(event) => onChange({ name: event.target.value })} />
@@ -94,6 +95,7 @@ export function ProviderEditor({
                 {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
               </Button>
             </div>
+            <div className="provider-section-label">路由参数</div>
             <div className="provider-tunables">
               <NumberField label="优先级" value={provider.priority} onChange={(value) => onChange({ priority: value })} />
               <NumberField label="权重" value={provider.weight} onChange={(value) => onChange({ weight: value })} />
